@@ -28,7 +28,13 @@ install-sh
 missing
 
 ## Libtool, makefile and so on.
+libtool
+ltmain.sh
+stamp-h1
 .deps
 .libs
 Makefile
 config.*
+
+## Explicit programs to ignore
+spineml_preflight

@@ -143,6 +143,101 @@ namespace s2b
         }
 
         /*!
+         * Generate the explicit list of connection delays. This may
+         * be a fixed value, or a uniform or normal distribution.
+         */
+        void generateDelays ()
+        {
+            // First, how many connections do we have? It's assumed
+            // that generateFixedProbability was called first to
+            // generate the connectivity maps.
+
+            switch (this->delayDistributionType) {
+            case s2b::Normal:
+                this->generateNormalDelays();
+                break;
+            case s2b::Uniform:
+                this->generateUniformDelays();
+                break;
+            case s2b::FixedValue:
+            default:
+                this->connectivityC2Delay.assign (this->connectivityC2D.size(), this->delayFixedValue);
+                break;
+            }
+        }
+
+        /*!
+         * Generate a fixed probability connection mapping using the
+         * passed in probability and RNG seed for the passed in number
+         * of source neurons and the passed in number of destination
+         * neurons.
+         *
+         * Note this accepts seed, probability in the arg list,
+         * whereas generateDelays works on member attributes such as
+         * delayMean, delayVariance, etc.
+         */
+        void generateFixedProbability (const int& seed, const float& probability,
+                                       const unsigned int& srcNum, const unsigned int& dstNum)
+        {
+            this->connectivityS2C.reserve (srcNum); // probably src_num.
+            this->connectivityS2C.resize (srcNum);  // We have to resize connectivityS2C here.
+            this->connectivityC2D.reserve (dstNum); // probably num from dst_population
+
+            RngData rngData;
+
+            // seed the rng: 2 questions about origin code. Why the additional
+            // 1 in front of the seed in 2nd arg to zigset, and why was
+            // rngData.seed hardcoded to 123?
+            zigset (&rngData, /*1*/seed);
+            rngData.seed = seed; // or 123??
+
+            // run through connections, creating connectivity pattern:
+            this->connectivityC2D.reserve (dstNum); // probably num from dst_population
+            this->connectivityS2C.reserve (srcNum); // probably src_num.
+            this->connectivityS2C.resize (srcNum); // We have to resize connectivityS2C here.
+
+            for (unsigned int i = 0; i < this->connectivityS2C.size(); ++i) {
+                this->connectivityS2C[i].reserve((int) round(dstNum*probability));
+            }
+            for (unsigned int srcIndex = 0; srcIndex < srcNum; ++srcIndex) {
+                for (unsigned int dstIndex = 0; dstIndex < dstNum; ++dstIndex) {
+                    if (UNI(&rngData) < probability) {
+                        this->connectivityC2D.push_back(dstIndex);
+                        cout << "Pushing back connection " << (this->connectivityC2D.size()-1)
+                             << " into connectivityS2C[" << srcIndex << "] (size " << this->connectivityS2C.size()
+                             << ") and dstIndex " << dstIndex
+                             << " into connectivityC2D." << endl;
+                        this->connectivityS2C[srcIndex].push_back(this->connectivityC2D.size()-1);
+                    }
+                }
+                if (float(this->connectivityC2D.size()) > 0.9*float(this->connectivityC2D.capacity())) {
+                    this->connectivityC2D.reserve(this->connectivityC2D.capacity()+dstNum);
+                }
+            }
+
+            // set up the number of connections
+            int numConn = this->connectivityC2D.size();
+
+            // Ok, having made up the connectivity maps as above, write them
+            // out into a connection binary file. Name these
+            // pp_connectionN.bin as opposed to just connection.bin to
+            // distinguish them.
+            cout << "numConn is " << numConn << endl;
+        }
+
+    private:
+
+        void generateNormalDelays ()
+        {
+            cerr << "Uh oh - unimplemented" << endl;
+        }
+
+        void generateUniformDelays ()
+        {
+            cerr << "Uh oh - unimplemented" << endl;
+        }
+
+        /*!
          * Write out the connection list as an explicit binary file.
          */
         void writeBinary (xml_node<> *into_node, const string& model_root, const string& binary_file_name)
@@ -293,89 +388,6 @@ namespace s2b
             binfile_node->append_attribute (explicit_delay_attr);
 
             into_node->prepend_node (binfile_node);
-        }
-
-        /*!
-         * Generate the explicit list of connection delays. This may
-         * be a fixed value, or a uniform or normal distribution.
-         */
-        void generateDelays ()
-        {
-            // First, how many connections do we have? It's assumed
-            // that generateFixedProbability was called first to
-            // generate the connectivity maps.
-
-            switch (this->delayDistributionType) {
-            case s2b::Normal:
-                cerr << "Uh oh - unimplemented" << endl;
-                break;
-            case s2b::Uniform:
-                cerr << "Uh oh - unimplemented" << endl;
-                break;
-            case s2b::FixedValue:
-            default:
-                this->connectivityC2Delay.assign (this->connectivityC2D.size(), this->delayFixedValue);
-                break;
-            }
-        }
-
-        /*!
-         * Generate a fixed probability connection mapping using the
-         * passed in probability and RNG seed for the passed in number
-         * of source neurons and the passed in number of destination
-         * neurons.
-         *
-         * Note this accepts seed, probability in the arg list,
-         * whereas generateDelays works on member attributes such as
-         * delayMean, delayVariance, etc.
-         */
-        void generateFixedProbability (const int& seed, const float& probability,
-                                       const unsigned int& srcNum, const unsigned int& dstNum)
-        {
-            this->connectivityS2C.reserve (srcNum); // probably src_num.
-            this->connectivityS2C.resize (srcNum);  // We have to resize connectivityS2C here.
-            this->connectivityC2D.reserve (dstNum); // probably num from dst_population
-
-            RngData rngData;
-
-            // seed the rng: 2 questions about origin code. Why the additional
-            // 1 in front of the seed in 2nd arg to zigset, and why was
-            // rngData.seed hardcoded to 123?
-            zigset (&rngData, /*1*/seed);
-            rngData.seed = seed; // or 123??
-
-            // run through connections, creating connectivity pattern:
-            this->connectivityC2D.reserve (dstNum); // probably num from dst_population
-            this->connectivityS2C.reserve (srcNum); // probably src_num.
-            this->connectivityS2C.resize (srcNum); // We have to resize connectivityS2C here.
-
-            for (unsigned int i = 0; i < this->connectivityS2C.size(); ++i) {
-                this->connectivityS2C[i].reserve((int) round(dstNum*probability));
-            }
-            for (unsigned int srcIndex = 0; srcIndex < srcNum; ++srcIndex) {
-                for (unsigned int dstIndex = 0; dstIndex < dstNum; ++dstIndex) {
-                    if (UNI(&rngData) < probability) {
-                        this->connectivityC2D.push_back(dstIndex);
-                        cout << "Pushing back connection " << (this->connectivityC2D.size()-1)
-                             << " into connectivityS2C[" << srcIndex << "] (size " << this->connectivityS2C.size()
-                             << ") and dstIndex " << dstIndex
-                             << " into connectivityC2D." << endl;
-                        this->connectivityS2C[srcIndex].push_back(this->connectivityC2D.size()-1);
-                    }
-                }
-                if (float(this->connectivityC2D.size()) > 0.9*float(this->connectivityC2D.capacity())) {
-                    this->connectivityC2D.reserve(this->connectivityC2D.capacity()+dstNum);
-                }
-            }
-
-            // set up the number of connections
-            int numConn = this->connectivityC2D.size();
-
-            // Ok, having made up the connectivity maps as above, write them
-            // out into a connection binary file. Name these
-            // pp_connectionN.bin as opposed to just connection.bin to
-            // distinguish them.
-            cout << "numConn is " << numConn << endl;
         }
 
     public:

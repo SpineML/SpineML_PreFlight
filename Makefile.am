@@ -1,6 +1,6 @@
 # Makefile...
 
-INCLUDES=-I$(top_srcdir) -I$(top_builddir) -I$(top_srcdir)/rapidxml-1.13
+INCLUDES=-I$(top_srcdir)/include -I$(top_srcdir)/include/rapidxml-1.13
 
 bin_PROGRAMS = spineml_preflight
 

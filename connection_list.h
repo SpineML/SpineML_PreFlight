@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <iostream>
-#include "include/rng.h"
+#include "rng.h"
 #include "rapidxml.hpp"
 #include "rapidxml_print.hpp"
 

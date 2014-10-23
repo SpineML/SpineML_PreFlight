@@ -11,9 +11,10 @@
 #include <fstream>
 #include <stdexcept>
 #include <stdlib.h>
+#include <string.h>
 #include "rapidxml.hpp"
 
-namespace s2b
+namespace spineml
 {
     /*!
      * Allocate storage and read in the data from the file at
@@ -21,6 +22,11 @@ namespace s2b
      */
     class AllocAndRead {
     public:
+        AllocAndRead ()
+            : filepath ("")
+            , data_((char*)0)
+        {
+        }
         AllocAndRead (const std::string& path)
             : filepath (path)
             , data_((char*)0)
@@ -40,6 +46,15 @@ namespace s2b
         char* data (void)
         {
             return this->data_;
+        }
+
+        /*!
+         * Public version of read.
+         */
+        void read (const std::string& path)
+        {
+            this->filepath = path;
+            this->read();
         }
 
     private:
@@ -91,6 +106,6 @@ namespace s2b
         char* data_;
     };
 
-} // namespace s2b
+} // namespace spineml
 
 #endif // _ALLOCANDREAD_H_

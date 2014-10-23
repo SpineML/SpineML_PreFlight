@@ -14,7 +14,7 @@
 #include "rapidxml.hpp"
 #include "allocandread.h"
 
-namespace s2b
+namespace spineml
 {
     /*!
      * A class to read the parameters stored in the SpineML
@@ -162,6 +162,6 @@ namespace s2b
          */
     };
 
-} // namespace s2b
+} // namespace spineml
 
 #endif // _EXPERIMENT_H_

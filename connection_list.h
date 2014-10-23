@@ -12,7 +12,7 @@
 #include <string>
 #include "rapidxml.hpp"
 
-namespace s2b
+namespace spineml
 {
     /*!
      * An enum to denote the type of a random distribution.
@@ -290,6 +290,6 @@ namespace s2b
 #endif
     };
 
-} // namespace s2b
+} // namespace spineml
 
 #endif // _CONNECTION_LIST_H_

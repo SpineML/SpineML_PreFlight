@@ -11,10 +11,10 @@
 
 using namespace std;
 using namespace rapidxml;
-using namespace s2b;
+using namespace spineml;
 
 ConnectionList::ConnectionList ()
-    : delayDistributionType(s2b::FixedValue)
+    : delayDistributionType(spineml::FixedValue)
     , delayFixedValue(0)
     , delayMean(0)
     , delayVariance(0)
@@ -30,7 +30,7 @@ ConnectionList::ConnectionList ()
 }
 
 ConnectionList::ConnectionList (unsigned int srcNum, unsigned int dstNum)
-    : delayDistributionType(s2b::FixedValue)
+    : delayDistributionType(spineml::FixedValue)
     , delayFixedValue(0)
     , delayMean(0)
     , delayVariance(0)
@@ -64,13 +64,13 @@ ConnectionList::generateDelays (void)
     // generate the connectivity maps.
 
     switch (this->delayDistributionType) {
-    case s2b::Normal:
+    case spineml::Normal:
         this->generateNormalDelays();
         break;
-    case s2b::Uniform:
+    case spineml::Uniform:
         this->generateUniformDelays();
         break;
-    case s2b::FixedValue:
+    case spineml::FixedValue:
     default:
         this->connectivityC2Delay.assign (this->connectivityC2D.size(), this->delayFixedValue);
         break;
@@ -303,7 +303,7 @@ ConnectionList::writeXml (xml_node<>* into_node,
     // we also do this for FixedValue, though we could instead write
     // Fixed Value into a Delay element.
     xml_node<>* distribution_node;
-    if (this->delayDistributionType == s2b::FixedValue) {
+    if (this->delayDistributionType == spineml::FixedValue) {
         distribution_node = thedoc->allocate_node (node_element, "FixedValue");
         stringstream delay_ss;
         delay_ss << this->delayFixedValue;

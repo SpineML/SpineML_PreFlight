@@ -13,7 +13,29 @@ using namespace std;
 using namespace rapidxml;
 using namespace s2b;
 
+ConnectionList::ConnectionList ()
+    : delayDistributionType(s2b::FixedValue)
+    , delayFixedValue(0)
+    , delayMean(0)
+    , delayVariance(0)
+    , delayRangeMin(0)
+    , delayRangeMax(0)
+    , delayDistributionSeed(123)
+    , delayDimension("")
+    , sampleRate(-1.0)
+{
+}
+
 ConnectionList::ConnectionList (unsigned int srcNum, unsigned int dstNum)
+    : delayDistributionType(s2b::FixedValue)
+    , delayFixedValue(0)
+    , delayMean(0)
+    , delayVariance(0)
+    , delayRangeMin(0)
+    , delayRangeMax(0)
+    , delayDistributionSeed(123)
+    , delayDimension("")
+    , sampleRate(-1.0)
 {
     // run through connections, creating connectivity pattern:
     this->connectivityS2C.reserve (srcNum); // probably src_num.
@@ -102,13 +124,68 @@ ConnectionList::generateFixedProbability (const int& seed, const float& probabil
 void
 ConnectionList::generateNormalDelays (void)
 {
-    cerr << "Uh oh - unimplemented" << endl;
+/*
+    float max_delay_val = 0;
+    float most_delay_accuracy = (1000.0f * time->sampleRate.den / time->sampleRate.num);
+
+    this->rngData_BRAHMS.seed = delayForConnTemp[3];
+    for (UINT32 i_BRAHMS = 0; i_BRAHMS < delayForConn.size(); ++i_BRAHMS) {
+        delayForConn[i_BRAHMS] = round((RNOR(&this->rngData_BRAHMS)*delayForConnTemp[2]+delayForConnTemp[1])/most_delay_accuracy);
+        //bout <<delayForConn[i_BRAHMS] << D_INFO;
+        if (delayForConn[i_BRAHMS] < 0) delayForConn[i_BRAHMS] = 0;
+        if (delayForConn[i_BRAHMS] > max_delay_val) max_delay_val = delayForConn[i_BRAHMS];
+    }
+
+    bout << (round(max_delay_val/most_delay_accuracy)+1) << " = moo" << D_INFO;
+
+    delayBuffer.resize(round(max_delay_val/most_delay_accuracy)+1);
+    delayedAnalogVals.resize(round(max_delay_val/most_delay_accuracy)+1);
+*/
+    RngData rngData;
+    float max_delay_val = 0;
+
+    rngData.seed = this->delayDistributionSeed;
+
+    if (this->sampleRate < 0) {
+        // Error - sampleRate unset!
+        throw runtime_error ("ConnectionList::generateNormalDelays: sample rate must be set.");
+    }
+
+    // In preflight, can we/must we receive notification of the sample
+    // rate? According to this, yes. In fact, this information is
+    // accessible in experiment.xml, and that's where we should read
+    // it from.
+    float most_delay_accuracy = (1000.0f * this->sampleRate /*time->sampleRate.den / time->sampleRate.num*/);
+
+    this->connectivityC2Delay.resize (this->connectivityC2D.size());
+
+    cout << "Delays: Normal distribution with mean " << this->delayMean << " and variance " << this->delayVariance << endl;
+    for (unsigned int i = 0; i < this->connectivityC2Delay.size(); ++i) {
+        this->connectivityC2Delay[i] = round(
+            /* This is RNOR() * variance+mean / most_delay_accuracy */
+            /*(RNOR(&rngData) * this->connectivityC2DelayTemp[2]+this->connectivityC2DelayTemp[1]) / most_delay_accuracy*/
+            (RNOR(&rngData) * this->delayVariance + this->delayMean) / most_delay_accuracy
+            );
+        cout << i << "," << this->connectivityC2Delay[i] << endl;
+        if (this->connectivityC2Delay[i] < 0) { this->connectivityC2Delay[i] = 0; }
+        if (this->connectivityC2Delay[i] > max_delay_val) { max_delay_val = this->connectivityC2Delay[i]; }
+    }
+    cout << "done" << endl;
+    cout << (round(max_delay_val/most_delay_accuracy)+1) << endl;
 }
 
 void
 ConnectionList::generateUniformDelays (void)
 {
-    cerr << "Uh oh - unimplemented" << endl;
+    throw runtime_error ("Uniform delays are unimplemented");
+/*
+    this->rngData_BRAHMS.seed = delayForConnTemp[3];
+    for (UINT32 i_BRAHMS = 0; i_BRAHMS < delayForConn.size(); ++i_BRAHMS) {
+        delayForConn[i_BRAHMS] = round((_randomUniform(&this->rngData_BRAHMS)*(delayForConnTemp[2]-delayForConnTemp[1])+delayForConnTemp[1])/most_delay_accuracy);
+        //bout <<delayForConn[i_BRAHMS] << D_INFO;
+        if (delayForConn[i_BRAHMS] > max_delay_val) max_delay_val = delayForConn[i_BRAHMS];
+    }
+*/
 }
 
 /*!
@@ -121,7 +198,9 @@ ConnectionList::writeBinary (xml_node<> *into_node,
 {
     if (this->connectivityC2Delay.size() != this->connectivityC2D.size()) {
         stringstream ee;
-        ee << __FUNCTION__ << " Error: Don't have the same number of delays as destinations.";
+        ee << __FUNCTION__ << " Error: Don't have the same number of delays ("
+           << this->connectivityC2Delay.size() << ") as destinations ("
+           << this->connectivityC2D.size() << ").";
         throw runtime_error (ee.str());
     }
 

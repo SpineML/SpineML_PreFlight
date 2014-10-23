@@ -5,6 +5,9 @@
  * Date: Oct 2014
  */
 
+#ifndef _CONNECTION_LIST_H_
+#define _CONNECTION_LIST_H_
+
 #include <vector>
 #include <string>
 #include "rapidxml.hpp"
@@ -83,7 +86,7 @@ namespace s2b
          * Constructors and destructor.
          */
         //@{
-        ConnectionList () {}
+        ConnectionList ();
         ConnectionList (unsigned int srcNum, unsigned int dstNum);
         ~ConnectionList() {}
         //@}
@@ -263,6 +266,16 @@ namespace s2b
          * Dimensions std::string for the delay. E.g. "ms".
          */
         std::string delayDimension;
+
+        /*!
+         * The sample rate in 1/s. This has to be passed in as a
+         * command line option to the spineml_preflight program. It's
+         * used when generating the delays according to a random
+         * distribution.
+         */
+        float sampleRate;
     };
 
 } // namespace s2b
+
+#endif // _CONNECTION_LIST_H_

@@ -26,7 +26,7 @@ dnl check for libs
 dnl AC_CHECK_LIB([futil], [main])
 
 dnl Checks for header files. Add more here...
-AC_CHECK_HEADERS([sys/types.h])
+AC_CHECK_HEADERS([sys/types.h stdlib.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL

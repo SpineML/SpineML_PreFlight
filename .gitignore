@@ -36,5 +36,8 @@ stamp-h1
 Makefile
 config.*
 
+# Ignore emacs backup files
+*~
+
 ## Explicit programs to ignore
 spineml_preflight

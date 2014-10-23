@@ -27,6 +27,8 @@
 #include <unistd.h>
 #include <string.h>
 #include "connection_list.h"
+#include "experiment.h"
+#include "allocandread.h"
 
 using namespace std;
 using namespace rapidxml;
@@ -41,14 +43,21 @@ using namespace rapidxml;
  * going into a class at some point, hence just sticking it in as a
  * global for now.
  */
-xml_node<> * first_pop_node;
+xml_node<>* first_pop_node;
 
 /*!
  * A global for the root node pointer. Same comments apply as for
  * first_pop_node.
  */
-xml_node<> * root_node;
+xml_node<>* root_node;
 
+/*!
+ * A lazy global (for now) for the sample rate, as read in from the
+ * experiment.
+ */
+double exptSampleRate;
+
+#ifdef REQUIRED
 /*!
  * A cartesian location structure. This is a copy of the same struct
  * found in SpineCreator/globalHeader.h.
@@ -69,6 +78,7 @@ struct conn {
     int dst;
     float metric;
 };
+#endif
 
 /*!
  * Read out model.xml file into a char*, allocating enough memory for
@@ -126,7 +136,7 @@ void preprocess_synapse (xml_node<>* proj_node,
  * (an explicit list of connections, with distribution generated like the
  * code in SpineML_2_BRAHMS_CL_weight.xsl)
  */
-void replace_fixedprob_connection (xml_node<> *syn_node,
+void replace_fixedprob_connection (xml_node<>* syn_node,
                                    const string& src_name,
                                    const string& src_num,
                                    const string& dst_population);
@@ -141,6 +151,9 @@ int alloc_and_read_xml_text (char* text)
     string line("");
 
     ifstream model;
+    // Fixme: This'll take a passed-in path to the model OR a passed
+    // in value for the experiment and from that get the model? OR
+    // pass in both?
     model.open ("./model/model.xml", ios::in);
     if (!model.is_open()) {
         cerr << "model.xml could not be opened." << endl;
@@ -341,19 +354,19 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
                 }
             } else if (delay_normal_node) {
                 cl.delayDistributionType = s2b::Normal;
-                xml_attribute<>* mean_attr = delay_value_node->first_attribute ("mean");
+                xml_attribute<>* mean_attr = delay_normal_node->first_attribute ("mean");
                 if (mean_attr) {
                     stringstream ss;
                     ss << mean_attr->value();
                     ss >> cl.delayMean;
                 }
-                xml_attribute<>* variance_attr = delay_value_node->first_attribute ("variance");
+                xml_attribute<>* variance_attr = delay_normal_node->first_attribute ("variance");
                 if (variance_attr) {
                     stringstream ss;
                     ss << variance_attr->value();
                     ss >> cl.delayVariance;
                 }
-                xml_attribute<>* seed_attr = delay_value_node->first_attribute ("seed");
+                xml_attribute<>* seed_attr = delay_normal_node->first_attribute ("seed");
                 if (seed_attr) {
                     stringstream ss;
                     ss << seed_attr->value();
@@ -361,19 +374,19 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
                 }
             } else if (delay_uniform_node) {
                 cl.delayDistributionType = s2b::Uniform;
-                xml_attribute<>* minimum_attr = delay_value_node->first_attribute ("minimum");
+                xml_attribute<>* minimum_attr = delay_uniform_node->first_attribute ("minimum");
                 if (minimum_attr) {
                     stringstream ss;
                     ss << minimum_attr->value();
                     ss >> cl.delayRangeMin;
                 }
-                xml_attribute<>* maximum_attr = delay_value_node->first_attribute ("maximum");
+                xml_attribute<>* maximum_attr = delay_uniform_node->first_attribute ("maximum");
                 if (maximum_attr) {
                     stringstream ss;
                     ss << maximum_attr->value();
                     ss >> cl.delayRangeMin;
                 }
-                xml_attribute<>* seed_attr = delay_value_node->first_attribute ("seed");
+                xml_attribute<>* seed_attr = delay_uniform_node->first_attribute ("seed");
                 if (seed_attr) {
                     stringstream ss;
                     ss << seed_attr->value();
@@ -399,11 +412,12 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
     if (dstNum_ != -1) {
         dstNum = static_cast<unsigned int>(dstNum_);
     } else {
-        // ERROR
+        throw runtime_error ("Failed ot find the number of neurons in the destination population.");
     }
     cout << "dstNum: " << dstNum << endl;
 
     cl.generateFixedProbability (seed, probabilityValue, srcNum, dstNum);
+    cl.sampleRate = exptSampleRate;
     cl.generateDelays();
     cl.write (fixedprob_node, "./model/", "pp_connectionN.bin");
 }
@@ -411,31 +425,24 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
 
 int main()
 {
-    char* text = static_cast<char*>(0);
-    text = (char*) malloc (1000000*sizeof(char)); // FIXME, need better scheme here.
-    // Currently, alloc_and_read_xml_text just does read_xml_text.
-    if (!alloc_and_read_xml_text (text)) {
-        cerr << "Failed to read" << endl;
-        return -1;
+    // How annoying. This mucks up the reading of model.xml...
+    {
+        s2b::Experiment expt ("./model/experiment.xml");
+        cout << "Sim rate: " << expt.getSimFixedRate() << endl;
+        exptSampleRate = expt.getSimFixedRate();
     }
 
-    if (text) {
-        // OK.
-        // cout << "text = " << text << endl;
-    } else {
-        cerr << "No text!" << endl;
-        return -1;
-    }
-
+    // Alternative scheme - an alloc and read class?
+    s2b::AllocAndRead ar("./model/model.xml");
     xml_document<> doc;    // character type defaults to char
 
     // we are choosing to parse the XML declaration
-    // parse_no_data_nodes prevents RapidXML from using the somewhat surprising
-    // behavior of having both values and data nodes, and having data nodes take
-    // precedence over values when printing
+    // parse_no_data_nodes prevents RapidXML from using the somewhat
+    // surprising behaviour of having both values and data nodes, and
+    // having data nodes take precedence over values when printing
     // >>> note that this will skip parsing of CDATA nodes <<<
     cout << "about to doc.parse.." << endl;
-    doc.parse<parse_declaration_node | parse_no_data_nodes>(text);
+    doc.parse<parse_declaration_node | parse_no_data_nodes>(ar.data());
     cout << "doc.parse worked" << endl;
 
     if (doc.first_node()->first_attribute("encoding")) {
@@ -449,7 +456,6 @@ int main()
         // Possibly look for HL:SpineML, if we have a high level model (not
         // used by anyone at present).
         cout << "No root node LL:SpineML!" << endl;
-        free (text);
         return -1;
     }
 
@@ -472,7 +478,5 @@ int main()
         f.close();
     }
 
-    // Clean up and return.
-    free (text);
     return 0;
 }

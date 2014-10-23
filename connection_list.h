@@ -15,7 +15,7 @@
 namespace s2b
 {
     /*!
-     * A random distribution type.
+     * An enum to denote the type of a random distribution.
      */
     enum Distribution {
         FixedValue,

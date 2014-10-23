@@ -50,7 +50,7 @@ ConnectionList::ConnectionList (unsigned int srcNum, unsigned int dstNum)
 }
 
 void
-ConnectionList::write (xml_node<> *into_node, const string& model_root, const string& binary_file_name)
+ConnectionList::write (xml_node<>* into_node, const string& model_root, const string& binary_file_name)
 {
     this->writeXml (into_node, model_root, binary_file_name);
     this->writeBinary (into_node, model_root, binary_file_name);
@@ -227,7 +227,7 @@ ConnectionList::generateUniformDelays (void)
  * Write out the connection list as an explicit binary file.
  */
 void
-ConnectionList::writeBinary (xml_node<> *into_node,
+ConnectionList::writeBinary (xml_node<>* into_node,
                              const string& model_root,
                              const string& binary_file_name)
 {
@@ -282,7 +282,7 @@ ConnectionList::writeBinary (xml_node<> *into_node,
 }
 
 void
-ConnectionList::writeXml (xml_node<> *into_node,
+ConnectionList::writeXml (xml_node<>* into_node,
                           const string& model_root,
                           const string& binary_file_name)
 {
@@ -338,7 +338,7 @@ ConnectionList::writeXml (xml_node<> *into_node,
     xml_attribute<>* num_connections_attr = thedoc->allocate_attribute ("num_connections", nc_alloced);
     // We're always going to explicitly list the delay for each connection:
 #ifdef WRITE_DELAY_NODE
-    // Do something other than the next line.
+    throw runtime_error("Do something other than the next line.");
 #endif
     xml_attribute<>* explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay", "1");
 

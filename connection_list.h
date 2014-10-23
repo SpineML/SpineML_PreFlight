@@ -149,6 +149,11 @@ namespace s2b
         void generateFixedProbability (const int& seed, const float& probability,
                                        const unsigned int& srcNum, const unsigned int& dstNum);
 
+        /*!
+         * Set sampleDt, passing in the timestep in seconds.
+         */
+        void setSampleDt (const float& dt_seconds);
+
     private:
 
         /*!
@@ -196,7 +201,12 @@ namespace s2b
 
         /*!
          * A list of the delays, indexed against "connection index",
-         * like connectivityC2D.
+         * like connectivityC2D. These delays are in "samples"
+         * units. Thus, if this is populated with a fixed value delay
+         * of 4 ms, and the experimental run is a simulation with a 1
+         * ms timestep, then the members of this vector will all be
+         * 4. If instead the time step of the expt is 0.1 ms, then all
+         * the members of this vector will be 40.
          */
         std::vector<float> connectivityC2Delay;
 
@@ -236,13 +246,15 @@ namespace s2b
         /*!
          * The connection delay IF the delay is a fixed scalar. If
          * there is a connection-dependent delay, that goes in the
-         * connection lists. I think.
+         * connection lists. I think. Units from delayDimension;
+         * default to ms in in doubt.
          */
         float delayFixedValue;
 
         /*!
          * If the delay is a normal distribution, it has a mean and
-         * variance.
+         * variance. Units from delayDimension; default to ms in in
+         * doubt.
          */
         //@{
         float delayMean;
@@ -251,6 +263,7 @@ namespace s2b
 
         /*!
          * If the delay is a uniform distribution, it has a range.
+         * Units from delayDimension; default to ms in in doubt.
          */
         //@{
         float delayRangeMin;
@@ -267,13 +280,15 @@ namespace s2b
          */
         std::string delayDimension;
 
+    private:
         /*!
-         * The sample rate in 1/s. This has to be passed in as a
+         * The sample timestep in s. This has to be passed in as a
          * command line option to the spineml_preflight program. It's
          * used when generating the delays according to a random
          * distribution.
          */
-        float sampleRate;
+        float sampleDt;
+        float sampleDt_ms;
     };
 
 } // namespace s2b

@@ -79,18 +79,23 @@ float uniformGCC(RngData* rd)
 }
 
 // RANDOM NUMBER GENERATOR
+// returns int (probably - it does <unsigned int> + <int>):
 #define SHR3(rd) ((rd)->jz=(rd)->seed,          \
                   (rd)->seed^=((rd)->seed<<13), \
                   (rd)->seed^=((rd)->seed>>17), \
                   (rd)->seed^=((rd)->seed<<5),  \
                   (rd)->jz+(rd)->seed)
+// returns float:
 #define UNI(rd) uniformGCC(rd)
+// returns float:
 #define RNOR(rd) ((rd)->hz=SHR3(rd),                                    \
                   (rd)->iz=(rd)->hz&127,                                \
                   (abs((rd)->hz) < (rd)->kn[(rd)->iz]) ? (rd)->hz*(rd)->wn[(rd)->iz] : nfix(rd))
+// returns float:
 #define REXP(rd) ((rd)->jz=SHR3(rd),                                    \
                   (rd)->iz=(rd)->jz&255,                                \
                   ((rd)->jz < (rd)->ke[(rd)->iz]) ? (rd)->jz*(rd)->we[(rd)->iz] : efix(rd))
+// returns double:
 #define RPOIS(rd) -log(1.0-UNI(rd))
 
 float nfix (RngData* rd) /*provides RNOR if #define cannot */

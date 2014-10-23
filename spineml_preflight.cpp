@@ -52,10 +52,10 @@ xml_node<>* first_pop_node;
 xml_node<>* root_node;
 
 /*!
- * A lazy global (for now) for the sample rate, as read in from the
- * experiment.
+ * A lazy global (for now) for the sample timestep, as read in from
+ * the experiment.
  */
-double exptSampleRate;
+double exptSampleDt;
 
 #ifdef REQUIRED
 /*!
@@ -417,7 +417,7 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
     cout << "dstNum: " << dstNum << endl;
 
     cl.generateFixedProbability (seed, probabilityValue, srcNum, dstNum);
-    cl.sampleRate = exptSampleRate;
+    cl.setSampleDt (exptSampleDt);
     cl.generateDelays();
     cl.write (fixedprob_node, "./model/", "pp_connectionN.bin");
 }
@@ -425,12 +425,9 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
 
 int main()
 {
-    // How annoying. This mucks up the reading of model.xml...
-    {
-        s2b::Experiment expt ("./model/experiment.xml");
-        cout << "Sim rate: " << expt.getSimFixedRate() << endl;
-        exptSampleRate = expt.getSimFixedRate();
-    }
+    s2b::Experiment expt ("./model/experiment.xml");
+    cout << "Sim timestep: " << expt.getSimFixedRate() << " s\n";
+    exptSampleDt = expt.getSimFixedDt(); // seconds
 
     // Alternative scheme - an alloc and read class?
     s2b::AllocAndRead ar("./model/model.xml");
@@ -441,21 +438,20 @@ int main()
     // surprising behaviour of having both values and data nodes, and
     // having data nodes take precedence over values when printing
     // >>> note that this will skip parsing of CDATA nodes <<<
-    cout << "about to doc.parse.." << endl;
     doc.parse<parse_declaration_node | parse_no_data_nodes>(ar.data());
-    cout << "doc.parse worked" << endl;
 
+#ifdef CARE_ABOUT_ENCODING
     if (doc.first_node()->first_attribute("encoding")) {
         string encoding = doc.first_node()->first_attribute("encoding")->value();
-        cout << "encoding: " << encoding << endl;
     }
+#endif
 
     // Get the root node.
-    root_node = doc.first_node(LVL"SpineML");
+    root_node = doc.first_node (LVL"SpineML");
     if (!root_node) {
         // Possibly look for HL:SpineML, if we have a high level model (not
         // used by anyone at present).
-        cout << "No root node LL:SpineML!" << endl;
+        cout << "No root node " << LVL << "SpineML!" << endl;
         return -1;
     }
 

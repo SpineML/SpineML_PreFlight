@@ -1,5 +1,6 @@
 /*
- * A small class to allocate space for an XML file.
+ * A small class to allocate space for some text and to then read it
+ * from a file.
  */
 
 #ifndef _ALLOCANDREAD_H_
@@ -29,7 +30,6 @@ namespace s2b
         ~AllocAndRead()
         {
             if (this->data_) {
-                std::cerr << "free\n";
                 free (this->data_);
             }
         }
@@ -48,7 +48,6 @@ namespace s2b
          */
         void read (void)
         {
-            std::cerr << "reading..\n";
             std::ifstream f;
             f.open (this->filepath.c_str(), std::ios::in);
             if (!f.is_open()) {
@@ -61,9 +60,7 @@ namespace s2b
             // of the file and find its size.
             f.seekg (0, std::ios::end);
             size_t sz = f.tellg();
-            std::cerr << "File size is " << sz << std::endl;
             f.seekg (0);
-            std::cerr << "malloc" << std::endl;
             this->data_ = static_cast<char*>(calloc (++sz, sizeof(char))); // ++ for trailing null
 
             char* textpos = this->data_;
@@ -72,7 +69,6 @@ namespace s2b
             size_t llen = 0;   // line length (chars)
             size_t curpos = 0;
             while (getline (f, line)) {
-                std::cerr << line << std::endl;
                 // Restore the newline
                 line += "\n";
                 // Get line length

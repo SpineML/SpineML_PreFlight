@@ -79,6 +79,16 @@ namespace spineml
                 return;
             }
 
+            rapidxml::xml_node<>* model_node = expt_node->first_node ("Model");
+            if (!model_node) {
+                std::cerr << "no Model node\n";
+                return;
+            }
+            rapidxml::xml_attribute<>* url_attr;
+            if ((url_attr = model_node->first_attribute ("network_layer_url"))) {
+                this->network_layer_path = url_attr->value();
+            }
+
             rapidxml::xml_node<>* sim_node = expt_node->first_node ("Simulation");
             if (!sim_node) {
                 std::cerr << "no Simulation node\n";
@@ -119,6 +129,11 @@ namespace spineml
         {
             return this->simFixedDt;
         }
+
+        std::string modelUrl (void)
+        {
+            return this->network_layer_path;
+        }
         //@}
 
         /*!
@@ -143,8 +158,8 @@ namespace spineml
         //! Expt desc. Also no need
         //std::string description;
 
-        //! Model network layer path. Not required.
-        //std::string network_layer_path
+        //! Model network layer path.
+        std::string network_layer_path;
 
         //! Simulation duration in seconds
         double simDuration;

@@ -16,19 +16,36 @@
  * Author: Seb James, 2014.
  */
 
-#include "experiment.h"
-#include "modelpreflight.h"
 #include <exception>
 #include <iostream>
+#include <string>
+#include "experiment.h"
+#include "modelpreflight.h"
 
 using namespace std;
+
+void stripUnixFile (std::string& unixPath)
+{
+        string::size_type pos (unixPath.find_last_of ('/'));
+        if (pos != string::npos) {
+                unixPath = unixPath.substr (0, pos);
+        }
+}
 
 int main()
 {
     try {
-        spineml::Experiment expt ("./model/experiment.xml");
+        // Fixme: Use popt to get command line arg for the experiment:
+        string expt_path ("./model/experiment.xml");
+        spineml::Experiment expt (expt_path);
+
+        string model_dir = expt_path;
+        stripUnixFile (model_dir);
+        model_dir += "/";
+        cout << "model_dir: " << model_dir << endl;
+
         // Fixme: Get path from the expt above and use below:
-        spineml::ModelPreflight model ("./model/model.xml");
+        spineml::ModelPreflight model (model_dir, expt.modelUrl());
         model.preflight();
         // Write out the now modified xml:
         model.write();

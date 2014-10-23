@@ -26,7 +26,7 @@ namespace spineml
     class ModelPreflight
     {
     public:
-        ModelPreflight(const std::string& path);
+        ModelPreflight(const std::string& fdir, const std::string& fname);
         ~ModelPreflight();
 
         /*!
@@ -100,9 +100,15 @@ namespace spineml
     private:
 
         /*!
-         * Path to the XML text file.
+         * Name of the XML text file.
          */
-        std::string filepath;
+        std::string modelfile;
+
+        /*!
+         * Path to directory containing modelfile. Include trailing
+         * '/' here.
+         */
+        std::string modeldir;
 
         /*!
          * An object into which to read the xml text prior to parsing.
@@ -123,6 +129,11 @@ namespace spineml
          * the root node pointer.
          */
         rapidxml::xml_node<>* root_node;
+
+        /*!
+         * The number in, e.g. pp_connection3.bin
+         */
+        unsigned int binfilenum;
     };
 
 } // namespace spineml

@@ -246,7 +246,7 @@ ConnectionList::writeBinary (xml_node<>* into_node,
     vector<int>::const_iterator d = this->connectivityC2D.begin();
     vector<float>::const_iterator dly = this->connectivityC2Delay.begin();
 
-    string path = model_root + "/" + binary_file_name;
+    string path = model_root + binary_file_name;
     ofstream f;
     f.open (path.c_str(), ios::out|ios::trunc);
     if (!f.is_open()) {

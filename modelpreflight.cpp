@@ -11,11 +11,15 @@ using namespace std;
 using namespace rapidxml;
 using namespace spineml;
 
-ModelPreflight::ModelPreflight(const std::string& path)
+ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname)
     : root_node (static_cast<xml_node<>*>(0))
+    , binfilenum (0)
 {
-    this->filepath = path;
-    this->modeldata.read (this->filepath);
+    this->modeldir = fdir;
+    this->modelfile = fname;
+    string filepath = this->modeldir + this->modelfile;
+    cout << "filepath: " << filepath;
+    this->modeldata.read (filepath);
 }
 
 ModelPreflight::~ModelPreflight()
@@ -26,16 +30,18 @@ void
 ModelPreflight::write (void)
 {
     // Backup model.xml:
+    string filepath = this->modeldir + this->modelfile;
+
     stringstream cmd;
-    cmd << "cp " << this->filepath << " " << this->filepath << ".bu";
+    cmd << "cp " << filepath << " " << filepath << ".bu";
     system (cmd.str().c_str());
 
     // Write model.xml:
     ofstream f;
-    f.open (this->filepath.c_str(), ios::out|ios::trunc);
+    f.open (filepath.c_str(), ios::out|ios::trunc);
     if (!f.is_open()) {
         stringstream ee;
-        ee << "Failed to open '" << this->filepath << "' for writing";
+        ee << "Failed to open '" << filepath << "' for writing";
         throw runtime_error (ee.str());
     }
     f << this->doc;
@@ -330,5 +336,10 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
     cl.setSampleDt (exptSampleDt);
 #endif
     cl.generateDelays();
-    cl.write (fixedprob_node, "./model/", "pp_connectionN.bin");
+    string binfilepath ("pp_connection");
+    stringstream numss;
+    numss << this->binfilenum++;
+    binfilepath += numss.str();
+    binfilepath += ".bin";
+    cl.write (fixedprob_node, this->modeldir, binfilepath);
 }

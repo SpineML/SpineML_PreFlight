@@ -149,10 +149,12 @@ namespace s2b
         void generateFixedProbability (const int& seed, const float& probability,
                                        const unsigned int& srcNum, const unsigned int& dstNum);
 
+#ifdef NEED_SAMPLE_TIMESTEP
         /*!
          * Set sampleDt, passing in the timestep in seconds.
          */
         void setSampleDt (const float& dt_seconds);
+#endif
 
     private:
 
@@ -201,12 +203,7 @@ namespace s2b
 
         /*!
          * A list of the delays, indexed against "connection index",
-         * like connectivityC2D. These delays are in "samples"
-         * units. Thus, if this is populated with a fixed value delay
-         * of 4 ms, and the experimental run is a simulation with a 1
-         * ms timestep, then the members of this vector will all be
-         * 4. If instead the time step of the expt is 0.1 ms, then all
-         * the members of this vector will be 40.
+         * like connectivityC2D. These delays are in ms.
          */
         std::vector<float> connectivityC2Delay;
 
@@ -246,15 +243,13 @@ namespace s2b
         /*!
          * The connection delay IF the delay is a fixed scalar. If
          * there is a connection-dependent delay, that goes in the
-         * connection lists. I think. Units from delayDimension;
-         * default to ms in in doubt.
+         * connection lists. I think. Dimensions: ms.
          */
         float delayFixedValue;
 
         /*!
          * If the delay is a normal distribution, it has a mean and
-         * variance. Units from delayDimension; default to ms in in
-         * doubt.
+         * variance. Dimensions: ms.
          */
         //@{
         float delayMean;
@@ -263,7 +258,7 @@ namespace s2b
 
         /*!
          * If the delay is a uniform distribution, it has a range.
-         * Units from delayDimension; default to ms in in doubt.
+         * Dimensions: ms.
          */
         //@{
         float delayRangeMin;
@@ -276,19 +271,23 @@ namespace s2b
         float delayDistributionSeed;
 
         /*!
-         * Dimensions std::string for the delay. E.g. "ms".
+         * Dimensions string for the delay. E.g. "ms".
          */
         std::string delayDimension;
 
     private:
+#ifdef NEED_SAMPLE_TIMESTEP
         /*!
          * The sample timestep in s. This has to be passed in as a
          * command line option to the spineml_preflight program. It's
          * used when generating the delays according to a random
          * distribution.
          */
+        //@{
         float sampleDt;
         float sampleDt_ms;
+        //@}
+#endif
     };
 
 } // namespace s2b

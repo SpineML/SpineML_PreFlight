@@ -334,11 +334,24 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
     // The connection list object which we'll populate.
     s2b::ConnectionList cl;
     {
+        float dimMultiplier = 1.0;
         xml_node<>* delay_node = fixedprob_node->first_node ("Delay");
         if (delay_node) {
             xml_attribute<>* dim_attr = delay_node->first_attribute ("Dimension");
             if (dim_attr) {
                 cl.delayDimension = dim_attr->value();
+                if (cl.delayDimension == "ms") {
+                    // This is the dimension we need - all delays in
+                    // the ConnectionList need to be stored in
+                    // ms. Leave dimMultiplier at its original value
+                    // of 1.
+                } else if (cl.delayDimension == "s") {
+                    dimMultiplier = 1000.0; // to convert to ms
+                } else {
+                    stringstream ee;
+                    ee << "Unknown delay dimension '" << cl.delayDimension << "'";
+                    throw runtime_error (ee.str());
+                }
             }
             // Do we have a FixedValue distribution?
             xml_node<>* delay_value_node = delay_node->first_node ("FixedValue");
@@ -351,6 +364,7 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
                     stringstream ss;
                     ss << value_attr->value();
                     ss >> cl.delayFixedValue;
+                    cl.delayFixedValue *= dimMultiplier;
                 }
             } else if (delay_normal_node) {
                 cl.delayDistributionType = s2b::Normal;
@@ -359,12 +373,14 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
                     stringstream ss;
                     ss << mean_attr->value();
                     ss >> cl.delayMean;
+                    cl.delayMean *= dimMultiplier;
                 }
                 xml_attribute<>* variance_attr = delay_normal_node->first_attribute ("variance");
                 if (variance_attr) {
                     stringstream ss;
                     ss << variance_attr->value();
                     ss >> cl.delayVariance;
+                    cl.delayVariance *= dimMultiplier;
                 }
                 xml_attribute<>* seed_attr = delay_normal_node->first_attribute ("seed");
                 if (seed_attr) {
@@ -379,12 +395,14 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
                     stringstream ss;
                     ss << minimum_attr->value();
                     ss >> cl.delayRangeMin;
+                    cl.delayRangeMin *= dimMultiplier;
                 }
                 xml_attribute<>* maximum_attr = delay_uniform_node->first_attribute ("maximum");
                 if (maximum_attr) {
                     stringstream ss;
                     ss << maximum_attr->value();
-                    ss >> cl.delayRangeMin;
+                    ss >> cl.delayRangeMax;
+                    cl.delayRangeMax *= dimMultiplier;
                 }
                 xml_attribute<>* seed_attr = delay_uniform_node->first_attribute ("seed");
                 if (seed_attr) {
@@ -417,7 +435,9 @@ void replace_fixedprob_connection (xml_node<> *fixedprob_node,
     cout << "dstNum: " << dstNum << endl;
 
     cl.generateFixedProbability (seed, probabilityValue, srcNum, dstNum);
+#ifdef NEED_SAMPLE_TIMESTEP
     cl.setSampleDt (exptSampleDt);
+#endif
     cl.generateDelays();
     cl.write (fixedprob_node, "./model/", "pp_connectionN.bin");
 }

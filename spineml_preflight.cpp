@@ -22,6 +22,10 @@
 #include "experiment.h"
 #include "modelpreflight.h"
 
+extern "C" {
+#include <popt.h>
+}
+
 using namespace std;
 
 void stripUnixFile (std::string& unixPath)
@@ -32,14 +36,40 @@ void stripUnixFile (std::string& unixPath)
         }
 }
 
-int main()
-{
-    try {
-        // Fixme: Use popt to get command line arg for the experiment:
-        string expt_path ("./model/experiment.xml");
-        spineml::Experiment expt (expt_path);
+struct features {
+    char * expt_path;
+};
 
-        string model_dir = expt_path;
+void zeroFeatures (struct features * f)
+{
+        f->expt_path = NULL;
+}
+
+int main (int argc, char * argv[])
+{
+    int rtn = 0;
+
+    // popt command line argument processing setup
+    struct features f;
+    zeroFeatures (&f);
+    struct poptOption opt[] = {
+        POPT_AUTOHELP
+        {"expt_path", 'e',
+         POPT_ARG_STRING, &(f.expt_path), 0,
+         "Provide the path to the experiment.xml file for the model you wish to preflight."},
+        POPT_TABLEEND
+    };
+    poptContext con;
+    con = poptGetContext (argv[0], argc, (const char**)argv, opt, 0);
+    while (poptGetNextOpt(con) != -1) {}
+
+    try {
+        if (f.expt_path == NULL) {
+            throw runtime_error ("Please supply path to experiment xml file.");
+        }
+        spineml::Experiment expt (f.expt_path);
+
+        string model_dir(f.expt_path);
         stripUnixFile (model_dir);
         model_dir += "/";
         cout << "model_dir: " << model_dir << endl;
@@ -51,7 +81,9 @@ int main()
         model.write();
     } catch (const exception& e) {
         cerr << "Error thrown: " << e.what() << endl;
-        return -1;
+        rtn = -1;
     }
-    return 0;
+
+    poptFreeContext(con);
+    return rtn;
 }

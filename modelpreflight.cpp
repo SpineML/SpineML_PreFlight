@@ -18,7 +18,7 @@ ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname
     this->modeldir = fdir;
     this->modelfile = fname;
     string filepath = this->modeldir + this->modelfile;
-    cout << "filepath: " << filepath;
+    cout << "filepath: " << filepath << endl;
     this->modeldata.read (filepath);
 }
 

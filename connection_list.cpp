@@ -340,7 +340,7 @@ ConnectionList::writeXml (xml_node<>* into_node,
 #ifdef WRITE_DELAY_NODE
     throw runtime_error("Do something other than the next line.");
 #endif
-    xml_attribute<>* explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay", "1");
+    xml_attribute<>* explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay_flag", "1");
 
     binfile_node->append_attribute (file_name_attr);
     binfile_node->append_attribute (num_connections_attr);

@@ -1,13 +1,13 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 AC_INIT([spineml_preflight], [0.1], [seb.james@sheffield.ac.uk])
-AC_CONFIG_SRCDIR(connection_list.h)
+AC_CONFIG_SRCDIR(src/connection_list.h)
 AC_REVISION([$Revision: 1.0.0 $])
 AC_PREFIX_DEFAULT(/usr/local)
 
 AM_INIT_AUTOMAKE([1.9 foreign])
 
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADER(src/config.h)
 
 AC_LANG_CPLUSPLUS
 
@@ -143,6 +143,7 @@ PKG_CHECK_MODULES(POPT, popt >= 1.0, [
 dnl List the Makefiles to output
 AC_CONFIG_FILES([
 Makefile
+src/Makefile
 ])
 
 AC_OUTPUT

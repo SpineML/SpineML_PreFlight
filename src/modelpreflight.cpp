@@ -327,7 +327,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
     if (dstNum_ != -1) {
         dstNum = static_cast<unsigned int>(dstNum_);
     } else {
-        throw runtime_error ("Failed ot find the number of neurons in the destination population.");
+        throw runtime_error ("Failed to find the number of neurons in the destination population.");
     }
     cout << "dstNum: " << dstNum << endl;
 
@@ -336,7 +336,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
     cl.setSampleDt (exptSampleDt);
 #endif
     cl.generateDelays();
-    string binfilepath ("pp_connection");
+    string binfilepath ("pf_connection");
     stringstream numss;
     numss << this->binfilenum++;
     binfilepath += numss.str();

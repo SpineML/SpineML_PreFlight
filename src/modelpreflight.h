@@ -131,7 +131,7 @@ namespace spineml
         rapidxml::xml_node<>* root_node;
 
         /*!
-         * The number in, e.g. pp_connection3.bin
+         * The number in, e.g. pf_connection3.bin
          */
         unsigned int binfilenum;
     };

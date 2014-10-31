@@ -127,7 +127,7 @@ ConnectionList::generateFixedProbability (const int& seed, const float& probabil
 
     // Ok, having made up the connectivity maps as above, write them
     // out into a connection binary file. Name these
-    // pp_connectionN.bin as opposed to just connection.bin to
+    // pf_connectionN.bin as opposed to just connection.bin to
     // distinguish them.
     cout << "numConn is " << numConn << endl;
 }

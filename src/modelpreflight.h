@@ -44,22 +44,22 @@ namespace spineml
 
         /*!
          * Take a population node, and process this for any changes we need to
-         * make. Sub-calls preprocess_projection.
+         * make. Sub-calls preflight_projection.
          */
-        void preprocess_population (rapidxml::xml_node<>* pop_node);
+        void preflight_population (rapidxml::xml_node<>* pop_node);
 
         /*!
          * Process the passed-in projection, making any changes necessary.
          */
-        void preprocess_projection (rapidxml::xml_node<>* proj_node,
-                                    const std::string& src_name, const std::string& src_num);
+        void preflight_projection (rapidxml::xml_node<>* proj_node,
+                                   const std::string& src_name, const std::string& src_num);
 
         /*!
          * Process the synapse. Search for KernelConnection and modify if found.
          */
-        void preprocess_synapse (rapidxml::xml_node<>* proj_node,
-                                 const std::string& src_name, const std::string& src_num,
-                                 const std::string& dst_population);
+        void preflight_synapse (rapidxml::xml_node<>* proj_node,
+                                const std::string& src_name, const std::string& src_num,
+                                const std::string& dst_population);
 
         /*!
          * Do the work of replacing a FixedProbability connection with a

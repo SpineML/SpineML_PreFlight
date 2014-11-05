@@ -79,8 +79,8 @@ ModelPreflight::preflight (void)
     for (this->first_pop_node = this->root_node->first_node(LVL"Population");
          this->first_pop_node;
          this->first_pop_node = this->first_pop_node->next_sibling(LVL"Population")) {
-        cout << "preprocess_population" << endl;
-        this->preprocess_population (this->first_pop_node);
+        cout << "preflight_population" << endl;
+        this->preflight_population (this->first_pop_node);
     }
 }
 
@@ -119,7 +119,7 @@ ModelPreflight::find_num_neurons (const string& dst_population)
 }
 
 void
-ModelPreflight::preprocess_population (xml_node<> *pop_node)
+ModelPreflight::preflight_population (xml_node<> *pop_node)
 {
     // Within each population:
     // Find source name; this is given by LL:Neuron name attribute; also have size attr.
@@ -147,14 +147,14 @@ ModelPreflight::preprocess_population (xml_node<> *pop_node)
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
 
-        preprocess_projection (proj_node, src_name, src_num);
+        preflight_projection (proj_node, src_name, src_num);
     }
 }
 
 void
-ModelPreflight::preprocess_projection (xml_node<> *proj_node,
-                                       const string& src_name,
-                                       const string& src_num)
+ModelPreflight::preflight_projection (xml_node<> *proj_node,
+                                      const string& src_name,
+                                      const string& src_num)
 {
     cout << __FUNCTION__ << " called" << endl;
     // Get the destination.
@@ -168,15 +168,15 @@ ModelPreflight::preprocess_projection (xml_node<> *proj_node,
     for (xml_node<> *syn_node = proj_node->first_node(LVL"Synapse");
          syn_node;
          syn_node = syn_node->next_sibling(LVL"Synapse")) {
-        preprocess_synapse (syn_node, src_name, src_num, dst_population);
+        preflight_synapse (syn_node, src_name, src_num, dst_population);
     }
 }
 
 void
-ModelPreflight::preprocess_synapse (xml_node<> *syn_node,
-                                    const string& src_name,
-                                    const string& src_num,
-                                    const string& dst_population)
+ModelPreflight::preflight_synapse (xml_node<> *syn_node,
+                                   const string& src_name,
+                                   const string& src_num,
+                                   const string& dst_population)
 {
     cout << __FUNCTION__ << " called" << endl;
     // For each synapse... Is there a FixedProbability?

@@ -178,22 +178,6 @@ ModelPreflight::replace_fixedvalue_property (xml_node<>* prop_node, unsigned int
         return;
     }
 
-    // Check we have a name, and retrieve the dimension. Needed? No.
-#if 0
-    string prop_name("");
-    xml_attribute<>* prop_name_attr;
-    if ((prop_name_attr = prop_node->first_attribute ("name"))) {
-        prop_name = prop_name_attr->value();
-    } else {
-        throw runtime_error ("replace_property: Won't replace a property with no name.");
-    }
-
-    string prop_dim("");
-    if ((prop_dim_attr = prop_node->first_attribute ("dimension"))) {
-        prop_dim = prop_dim_attr->value();
-    } // else dim stays empty
-#endif
-
     string binfilepath ("pf_explicitData");
     stringstream numss;
     numss << this->explicitData_binfilenum++;

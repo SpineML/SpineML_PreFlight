@@ -23,7 +23,6 @@ namespace spineml
     class FixedValue
     {
     public:
-        //FixedValue(double d, const unsigned int num_in_pop);
         FixedValue(rapidxml::xml_node<>* fv_node, const unsigned int num_in_pop);
         ~FixedValue() {}
 
@@ -69,7 +68,7 @@ namespace spineml
         /*!
          * The fixed value as a number.
          */
-        double value;
+        float value;
 
         /*!
          * The number of neurons for the population to which this

@@ -9,14 +9,6 @@ using namespace std;
 using namespace spineml;
 using namespace rapidxml;
 
-#if 0
-FixedValue::FixedValue(double d, const unsigned int num_in_pop)
-    : value(d)
-    , numInPopulation (num_in_pop)
-{
-}
-#endif
-
 FixedValue::FixedValue(xml_node<>* fv_node, const unsigned int num_in_pop)
     : numInPopulation (num_in_pop)
 {
@@ -54,7 +46,8 @@ FixedValue::writeVLBinary (rapidxml::xml_node<>* into_node,
     cerr << "Opened file " << path << endl;
 
     for (unsigned int i = 0; i<this->numInPopulation; ++i) {
-        f.write (reinterpret_cast<const char*>(&this->value), sizeof(double));
+        f.write (reinterpret_cast<const char*>(&i), sizeof(unsigned int));
+        f.write (reinterpret_cast<const char*>(&this->value), sizeof(float));
     }
 
     f.close();

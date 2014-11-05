@@ -6,6 +6,7 @@
 #include "rapidxml.hpp"
 #include "modelpreflight.h"
 #include "connection_list.h"
+#include "fixedvalue.h"
 
 using namespace std;
 using namespace rapidxml;
@@ -14,6 +15,7 @@ using namespace spineml;
 ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname)
     : root_node (static_cast<xml_node<>*>(0))
     , binfilenum (0)
+    , explicitData_binfilenum (0)
 {
     this->modeldir = fdir;
     this->modelfile = fname;
@@ -121,9 +123,9 @@ ModelPreflight::find_num_neurons (const string& dst_population)
 void
 ModelPreflight::preflight_population (xml_node<> *pop_node)
 {
-    // Within each population:
-    // Find source name; this is given by LL:Neuron name attribute; also have size attr.
-    // search out projections.
+    // Within each population: Find the "population name"; this is
+    // actually given by the LL:Neuron name attribute; also have a
+    // size attr. Then search out projections.
     xml_node<> *neuron_node = pop_node->first_node(LVL"Neuron");
     if (!neuron_node) {
         // No src name. Does that mean we return or carry on?
@@ -137,18 +139,68 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
     } // else failed to get src name
 
     string src_num("");
+    unsigned int src_number(0);
     xml_attribute<>* num_attr;
     if ((num_attr = neuron_node->first_attribute ("size"))) {
         src_num = num_attr->value();
+        stringstream src_num_ss;
+        src_num_ss << src_num;
+        src_num_ss >> src_number;
     } // else failed to get src num
 
-    // Now find all Projections.
+    // Now find all Projections out from the neuron and expand any
+    // connections into explict lists, as necessary.
     for (xml_node<> *proj_node = pop_node->first_node(LVL"Projection");
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
 
         preflight_projection (proj_node, src_name, src_num);
     }
+
+    // Next, replace any Properties with explicit binary data
+    for (xml_node<>* prop_node = neuron_node->first_node("Property");
+         prop_node;
+         prop_node = prop_node->next_sibling("Property")) {
+        this->replace_fixedvalue_property (prop_node, src_number);
+    }
+}
+
+void
+ModelPreflight::replace_fixedvalue_property (xml_node<>* prop_node, unsigned int pop_size)
+{
+    cout << __FUNCTION__ << " called" << endl;
+
+    // Find a subelement called FixedValue; if there is none, there's
+    // nothing further to do.
+    xml_node<>* fixedvalue_node = prop_node->first_node("FixedValue");
+    if (!fixedvalue_node) {
+        // Nothing further to do; return.
+        return;
+    }
+
+    // Check we have a name, and retrieve the dimension. Needed? No.
+#if 0
+    string prop_name("");
+    xml_attribute<>* prop_name_attr;
+    if ((prop_name_attr = prop_node->first_attribute ("name"))) {
+        prop_name = prop_name_attr->value();
+    } else {
+        throw runtime_error ("replace_property: Won't replace a property with no name.");
+    }
+
+    string prop_dim("");
+    if ((prop_dim_attr = prop_node->first_attribute ("dimension"))) {
+        prop_dim = prop_dim_attr->value();
+    } // else dim stays empty
+#endif
+
+    string binfilepath ("pf_explicitData");
+    stringstream numss;
+    numss << this->explicitData_binfilenum++;
+    binfilepath += numss.str();
+    binfilepath += ".bin";
+    spineml::FixedValue fv (fixedvalue_node, pop_size);
+    fv.writeAsValueList (fixedvalue_node, this->modeldir, binfilepath);
 }
 
 void
@@ -255,7 +307,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
             xml_node<>* delay_normal_node = delay_node->first_node ("NormalDistribution");
             xml_node<>* delay_uniform_node = delay_node->first_node ("UniformDistribution");
             if (delay_value_node) {
-                cl.delayDistributionType = spineml::FixedValue;
+                cl.delayDistributionType = spineml::Dist_FixedValue;
                 xml_attribute<>* value_attr = delay_value_node->first_attribute ("value");
                 if (value_attr) {
                     stringstream ss;
@@ -264,7 +316,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
                     cl.delayFixedValue *= dimMultiplier;
                 }
             } else if (delay_normal_node) {
-                cl.delayDistributionType = spineml::Normal;
+                cl.delayDistributionType = spineml::Dist_Normal;
                 xml_attribute<>* mean_attr = delay_normal_node->first_attribute ("mean");
                 if (mean_attr) {
                     stringstream ss;
@@ -286,7 +338,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
                     ss >> cl.delayDistributionSeed;
                 }
             } else if (delay_uniform_node) {
-                cl.delayDistributionType = spineml::Uniform;
+                cl.delayDistributionType = spineml::Dist_Uniform;
                 xml_attribute<>* minimum_attr = delay_uniform_node->first_attribute ("minimum");
                 if (minimum_attr) {
                     stringstream ss;

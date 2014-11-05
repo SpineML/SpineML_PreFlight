@@ -37,6 +37,13 @@ namespace spineml
         void preflight (void);
 
         /*!
+         * Backup the existing model.xml file, then overwrite it with
+         * the current content of this->doc.
+         */
+        void write (void);
+
+    private:
+        /*!
          * Find the number of neurons in the destination population, starting
          * from the root node or the first population node (globals/members).
          */
@@ -92,12 +99,24 @@ namespace spineml
                                            const std::string& dst_population);
 
         /*!
-         * Backup the existing model.xml file, then overwrite it with
-         * the current content of this->doc.
+         * Replace a fixed value property with an explicit binary
+         * file. Replace this:
+         *
+         * <Property name="m" dimension="?">
+         *   <FixedValue value="1"/>
+         * </Property>
+         *
+         * with something like this:
+         *
+         * <Property name="m" dimension="?">
+         *   <ValueList>
+         *     <BinaryFile file_name="pf_explicitDataBinaryFile5.bin" num_elements="2500"/>
+         *   </ValueList>
+         * </Property>
+         *
+         * As well as writing out the data file.
          */
-        void write (void);
-
-    private:
+        void replace_fixedvalue_property (rapidxml::xml_node<>* prop_node, unsigned int pop_size);
 
         /*!
          * Name of the XML text file.
@@ -131,9 +150,16 @@ namespace spineml
         rapidxml::xml_node<>* root_node;
 
         /*!
-         * The number in, e.g. pf_connection3.bin
+         * The number for the next binary file name for connection lists,
+         * e.g. '3' for pf_connection3.bin
          */
         unsigned int binfilenum;
+
+        /*!
+         * The number for the next binary file name for explicit data,
+         * e.g. '4' for "pf_explictData4.bin"
+         */
+        unsigned int explicitData_binfilenum;
     };
 
 } // namespace spineml

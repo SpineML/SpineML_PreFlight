@@ -18,9 +18,9 @@ namespace spineml
      * An enum to denote the type of a random distribution.
      */
     enum Distribution {
-        FixedValue,
-        Uniform,
-        Normal
+        Dist_FixedValue,
+        Dist_Uniform,
+        Dist_Normal
     };
 
     /*!

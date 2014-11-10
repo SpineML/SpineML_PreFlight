@@ -33,11 +33,34 @@ namespace spineml
         {
             this->read();
         }
-        ~AllocAndRead()
+        ~AllocAndRead ()
         {
             if (this->data_) {
                 free (this->data_);
             }
+        }
+
+        /*!
+         * A copy constructor - we have to make a copy of this->data_
+         */
+        AllocAndRead (const AllocAndRead& other)
+        {
+            this->filepath = other.filepath;
+            this->sz = other.getsize();
+            this->data_ = static_cast<char*>(calloc (this->sz, sizeof(char)));
+            // Now copy contents of others' data
+            size_t i = 0;
+            while (i < this->sz) {
+                this->data_[i] = other.datachar(i);
+                ++i;
+            }
+            // no need to null-terminate as we used calloc.
+        }
+
+        char datachar (size_t i) const
+        {
+            char c = this->data_[i];
+            return c;
         }
 
         /*!
@@ -46,6 +69,17 @@ namespace spineml
         char* data (void)
         {
             return this->data_;
+        }
+
+        std::string getDataString (void) const
+        {
+            std::string rtn (this->data_);
+            return rtn;
+        }
+
+        size_t getsize (void) const
+        {
+            return this->sz;
         }
 
         /*!
@@ -74,9 +108,9 @@ namespace spineml
             // Work out how much memory to allocate - seek to the end
             // of the file and find its size.
             f.seekg (0, std::ios::end);
-            size_t sz = f.tellg();
+            this->sz = f.tellg();
             f.seekg (0);
-            this->data_ = static_cast<char*>(calloc (++sz, sizeof(char))); // ++ for trailing null
+            this->data_ = static_cast<char*>(calloc (++this->sz, sizeof(char))); // ++ for trailing null
 
             char* textpos = this->data_;
             std::string line("");
@@ -104,6 +138,9 @@ namespace spineml
 
         //! The character data.
         char* data_;
+
+        //! The size in bytes of the character data @data_
+        size_t sz;
     };
 
 } // namespace spineml

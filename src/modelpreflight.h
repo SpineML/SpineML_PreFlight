@@ -9,8 +9,10 @@
 #define _MODELPREFLIGHT_H_
 
 #include <string>
+#include <map>
 #include "rapidxml.hpp"
 #include "allocandread.h"
+#include "component.h"
 
 /*!
  * It may be that we need to run this for HL and LL models.
@@ -99,8 +101,9 @@ namespace spineml
                                            const std::string& dst_population);
 
         /*!
-         * Replace a fixed value property with an explicit binary
-         * file. Replace this:
+         * Replace a fixed value or random distribution state variable
+         * property with an explicit binary file. For example, replace
+         * this:
          *
          * <Property name="m" dimension="?">
          *   <FixedValue value="1"/>
@@ -115,8 +118,18 @@ namespace spineml
          * </Property>
          *
          * As well as writing out the data file.
+         *
+         * Note that we have to look in the component xml to see if
+         * the property is a state variable (which we should
+         * preflight) or a parameter (which we shouldn't).
          */
-        void replace_fixedvalue_property (rapidxml::xml_node<>* prop_node, unsigned int pop_size);
+        void replace_statevar_property (rapidxml::xml_node<>* prop_node, unsigned int pop_size);
+
+        /*!
+         * A little utility. Given a unixPath containing "blah.xml",
+         * change unixPath to "blah".
+         */
+        void stripFileSuffix (std::string& unixPath);
 
         /*!
          * Name of the XML text file.
@@ -160,6 +173,12 @@ namespace spineml
          * e.g. '4' for "pf_explictData4.bin"
          */
         unsigned int explicitData_binfilenum;
+
+        /*!
+         * A store of the properties which are state variables for
+         * each component.
+         */
+        std::map<std::string, spineml::Component> components;
     };
 
 } // namespace spineml

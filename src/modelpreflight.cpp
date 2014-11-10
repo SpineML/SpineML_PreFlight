@@ -53,7 +53,6 @@ ModelPreflight::write (void)
 void
 ModelPreflight::preflight (void)
 {
-
     // we are choosing to parse the XML declaration
     // parse_no_data_nodes prevents RapidXML from using the somewhat
     // surprising behaviour of having both values and data nodes, and
@@ -121,6 +120,19 @@ ModelPreflight::find_num_neurons (const string& dst_population)
 }
 
 void
+ModelPreflight::stripFileSuffix (string& unixPath)
+{
+        string::size_type pos (unixPath.rfind('.'));
+        if (pos != string::npos) {
+                // We have a '.' character
+                string tmp (unixPath.substr (0, pos));
+                if (!tmp.empty()) {
+                        unixPath = tmp;
+                }
+        }
+}
+
+void
 ModelPreflight::preflight_population (xml_node<> *pop_node)
 {
     // Within each population: Find the "population name"; this is
@@ -132,11 +144,41 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
         return;
     }
 
+    // Get the name of the population.
     string src_name("");
     xml_attribute<>* name_attr;
     if ((name_attr = neuron_node->first_attribute ("name"))) {
         src_name = name_attr->value();
     } // else failed to get src name
+
+    // The component name
+    string c_name("");
+    xml_attribute<>* cname_attr;
+    if ((cname_attr = neuron_node->first_attribute ("url"))) {
+        c_name = cname_attr->value();
+    }
+
+    this->stripFileSuffix (c_name);
+
+    if (c_name.empty()) {
+        stringstream ee;
+        ee << "Failed to read component name for population "
+           << src_name << "; can't proceed";
+        throw runtime_error (ee.str());
+    }
+
+    // Can now read additional information about the component, if
+    // necessary.
+    if (!this->components.count (c_name)) {
+        try {
+            spineml::Component c (modeldir, c_name);
+            this->components.insert (make_pair (c_name, c));
+            cout << "Inserted component " << c_name << " with state variables: "
+                 << c.listStateVariables() << "\n";
+        } catch (const std::exception& e) {
+            cerr << "Failed to read component " << c_name << ": " << e.what() << ".\n";
+        }
+    }
 
     string src_num("");
     unsigned int src_number(0);
@@ -161,15 +203,25 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
     for (xml_node<>* prop_node = neuron_node->first_node("Property");
          prop_node;
          prop_node = prop_node->next_sibling("Property")) {
-        this->replace_fixedvalue_property (prop_node, src_number);
+
+        // If this is a state variable property, then replace it.
+        string prop_name("");
+        xml_attribute<>* prop_name_attr = prop_node->first_attribute ("name");
+        if (prop_name_attr) {
+            prop_name = prop_name_attr->value();
+        } else {
+            throw runtime_error ("Failed to get property name");
+        }
+        if (this->components.at(c_name).containsStateVariable (prop_name)) {
+            this->replace_statevar_property (prop_node, src_number);
+        }
     }
 }
 
 void
-ModelPreflight::replace_fixedvalue_property (xml_node<>* prop_node, unsigned int pop_size)
+ModelPreflight::replace_statevar_property (xml_node<>* prop_node,
+                                           unsigned int pop_size)
 {
-    cout << __FUNCTION__ << " called" << endl;
-
     // Find a subelement called FixedValue; if there is none, there's
     // nothing further to do.
     xml_node<>* fixedvalue_node = prop_node->first_node("FixedValue");

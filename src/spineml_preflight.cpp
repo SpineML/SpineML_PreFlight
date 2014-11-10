@@ -65,7 +65,7 @@ int main (int argc, char * argv[])
 
     try {
         if (f.expt_path == NULL) {
-            throw runtime_error ("Please supply path to experiment xml file.");
+            throw runtime_error ("Please supply the path to experiment xml file with the -e option.");
         }
         spineml::Experiment expt (f.expt_path);
 

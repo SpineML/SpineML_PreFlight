@@ -179,6 +179,12 @@ namespace spineml
          * each component.
          */
         std::map<std::string, spineml::Component> components;
+
+    public:
+        /*!
+         * If true, then make a backup of model.xml
+         */
+        bool backup;
     };
 
 } // namespace spineml

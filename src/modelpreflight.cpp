@@ -16,6 +16,7 @@ ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname
     : root_node (static_cast<xml_node<>*>(0))
     , binfilenum (0)
     , explicitData_binfilenum (0)
+    , backup (false)
 {
     this->modeldir = fdir;
     this->modelfile = fname;
@@ -31,12 +32,14 @@ ModelPreflight::~ModelPreflight()
 void
 ModelPreflight::write (void)
 {
-    // Backup model.xml:
     string filepath = this->modeldir + this->modelfile;
 
-    stringstream cmd;
-    cmd << "cp " << filepath << " " << filepath << ".bu";
-    system (cmd.str().c_str());
+    // If requested, backup model.xml:
+    if (this->backup == true) {
+        stringstream cmd;
+        cmd << "cp " << filepath << " " << filepath << ".bu";
+        system (cmd.str().c_str());
+    }
 
     // Write model.xml:
     ofstream f;
@@ -151,13 +154,14 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
         src_name = name_attr->value();
     } // else failed to get src name
 
-    // The component name
+    // Now get the component name - this is user specified and there
+    // should be an XML file associated with the component with this
+    // name + .xml
     string c_name("");
     xml_attribute<>* cname_attr;
     if ((cname_attr = neuron_node->first_attribute ("url"))) {
         c_name = cname_attr->value();
     }
-
     this->stripFileSuffix (c_name);
 
     if (c_name.empty()) {
@@ -173,8 +177,6 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
         try {
             spineml::Component c (modeldir, c_name);
             this->components.insert (make_pair (c_name, c));
-            cout << "Inserted component " << c_name << " with state variables: "
-                 << c.listStateVariables() << "\n";
         } catch (const std::exception& e) {
             cerr << "Failed to read component " << c_name << ": " << e.what() << ".\n";
         }
@@ -195,7 +197,6 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
     for (xml_node<> *proj_node = pop_node->first_node(LVL"Projection");
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
-
         preflight_projection (proj_node, src_name, src_num);
     }
 

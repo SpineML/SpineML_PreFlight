@@ -38,11 +38,13 @@ void stripUnixFile (std::string& unixPath)
 
 struct features {
     char * expt_path;
+    int backup_model;
 };
 
 void zeroFeatures (struct features * f)
 {
         f->expt_path = NULL;
+        f->backup_model = 0;
 }
 
 int main (int argc, char * argv[])
@@ -57,6 +59,9 @@ int main (int argc, char * argv[])
         {"expt_path", 'e',
          POPT_ARG_STRING, &(f.expt_path), 0,
          "Provide the path to the experiment.xml file for the model you wish to preflight."},
+        {"backup_model", 'b',
+         POPT_ARG_NONE, &(f.backup_model), 0,
+         "If set, make a backup of model.xml as model.xml.bu."},
         POPT_TABLEEND
     };
     poptContext con;
@@ -76,6 +81,9 @@ int main (int argc, char * argv[])
 
         // Fixme: Get path from the expt above and use below:
         spineml::ModelPreflight model (model_dir, expt.modelUrl());
+        if (f.backup_model > 0) {
+            model.backup = true;
+        }
         model.preflight();
         // Write out the now modified xml:
         model.write();

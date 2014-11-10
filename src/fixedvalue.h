@@ -68,7 +68,7 @@ namespace spineml
         /*!
          * The fixed value as a number.
          */
-        float value;
+        double value;
 
         /*!
          * The number of neurons for the population to which this

@@ -47,7 +47,7 @@ FixedValue::writeVLBinary (rapidxml::xml_node<>* into_node,
 
     for (unsigned int i = 0; i<this->numInPopulation; ++i) {
         f.write (reinterpret_cast<const char*>(&i), sizeof(unsigned int));
-        f.write (reinterpret_cast<const char*>(&this->value), sizeof(float));
+        f.write (reinterpret_cast<const char*>(&this->value), sizeof(double));
     }
 
     f.close();

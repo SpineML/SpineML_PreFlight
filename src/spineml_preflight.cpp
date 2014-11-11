@@ -77,7 +77,7 @@ int main (int argc, char * argv[])
         string model_dir(f.expt_path);
         stripUnixFile (model_dir);
         model_dir += "/";
-        cout << "model_dir: " << model_dir << endl;
+        cout << "Model directory: " << model_dir << endl;
 
         // Fixme: Get path from the expt above and use below:
         spineml::ModelPreflight model (model_dir, expt.modelUrl());

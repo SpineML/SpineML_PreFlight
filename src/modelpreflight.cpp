@@ -1,3 +1,11 @@
+/*
+ * Implementation of the class ModelPreflight.
+ *
+ * Author: Seb James <seb.james@sheffield.ac.uk>
+ * Date: Oct-Nov 2014
+ * Licence: GNU GPL
+ */
+
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -7,6 +15,9 @@
 #include "modelpreflight.h"
 #include "connection_list.h"
 #include "fixedvalue.h"
+#include "uniformdistribution.h"
+#include "normaldistribution.h"
+#include "valuelist.h"
 
 using namespace std;
 using namespace rapidxml;
@@ -21,7 +32,7 @@ ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname
     this->modeldir = fdir;
     this->modelfile = fname;
     string filepath = this->modeldir + this->modelfile;
-    cout << "filepath: " << filepath << endl;
+    cout << "Model filepath: " << filepath << endl;
     this->modeldata.read (filepath);
 }
 
@@ -83,7 +94,6 @@ ModelPreflight::preflight (void)
     for (this->first_pop_node = this->root_node->first_node(LVL"Population");
          this->first_pop_node;
          this->first_pop_node = this->first_pop_node->next_sibling(LVL"Population")) {
-        cout << "preflight_population" << endl;
         this->preflight_population (this->first_pop_node);
     }
 }
@@ -154,6 +164,9 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
         src_name = name_attr->value();
     } // else failed to get src name
 
+    // Output some info to stdout
+    cout << "Preflight population: '" << src_name << "'\n";
+
     // Now get the component name - this is user specified and there
     // should be an XML file associated with the component with this
     // name + .xml
@@ -214,6 +227,7 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
             throw runtime_error ("Failed to get property name");
         }
         if (this->components.at(c_name).containsStateVariable (prop_name)) {
+            // This property is a state variable and not a parameter
             this->replace_statevar_property (prop_node, src_number);
         }
     }
@@ -223,21 +237,56 @@ void
 ModelPreflight::replace_statevar_property (xml_node<>* prop_node,
                                            unsigned int pop_size)
 {
-    // Find a subelement called FixedValue; if there is none, there's
-    // nothing further to do.
+    // Depending on what we find in the property, call differing
+    // replace methods:
     xml_node<>* fixedvalue_node = prop_node->first_node("FixedValue");
-    if (!fixedvalue_node) {
-        // Nothing further to do; return.
-        return;
+    if (fixedvalue_node) {
+        spineml::FixedValue fv (fixedvalue_node, pop_size);
+        if (!fv.writeAsBinaryValueList (fixedvalue_node, this->modeldir,
+                                        this->nextExplicitDataPath())) {
+            // if writeAsBinaryValueList returned false, the explicit
+            // data binary path was not used, so decrement it again.
+            this->explicitData_binfilenum--;
+        }
     }
 
+    xml_node<>* udist_node = prop_node->first_node("UniformDistribution");
+    if (udist_node) {
+        spineml::UniformDistribution ud (udist_node, pop_size);
+        if (!ud.writeAsBinaryValueList (udist_node, this->modeldir,
+                                        this->nextExplicitDataPath())) {
+            this->explicitData_binfilenum--;
+        }
+    }
+
+    xml_node<>* ndist_node = prop_node->first_node("NormalDistribution");
+    if (ndist_node) {
+        spineml::NormalDistribution nd (ndist_node, pop_size);
+        if (!nd.writeAsBinaryValueList (ndist_node, this->modeldir,
+                                        this->nextExplicitDataPath())) {
+            this->explicitData_binfilenum--;
+        }
+    }
+
+    xml_node<>* vallist_node = prop_node->first_node("ValueList");
+    if (vallist_node) {
+        spineml::ValueList vl (vallist_node, pop_size);
+        if (!vl.writeAsBinaryValueList (vallist_node, this->modeldir,
+                                        this->nextExplicitDataPath())) {
+            this->explicitData_binfilenum--;
+        }
+    }
+}
+
+string
+ModelPreflight::nextExplicitDataPath (void)
+{
     string binfilepath ("pf_explicitData");
     stringstream numss;
     numss << this->explicitData_binfilenum++;
     binfilepath += numss.str();
     binfilepath += ".bin";
-    spineml::FixedValue fv (fixedvalue_node, pop_size);
-    fv.writeAsValueList (fixedvalue_node, this->modeldir, binfilepath);
+    return binfilepath;
 }
 
 void
@@ -245,7 +294,6 @@ ModelPreflight::preflight_projection (xml_node<> *proj_node,
                                       const string& src_name,
                                       const string& src_num)
 {
-    cout << __FUNCTION__ << " called" << endl;
     // Get the destination.
     string dst_population("");
     xml_attribute<>* dst_pop_attr;
@@ -267,14 +315,15 @@ ModelPreflight::preflight_synapse (xml_node<> *syn_node,
                                    const string& src_num,
                                    const string& dst_population)
 {
-    cout << __FUNCTION__ << " called" << endl;
     // For each synapse... Is there a FixedProbability?
     xml_node<>* fixedprob_connection = syn_node->first_node("FixedProbabilityConnection");
-    if (!fixedprob_connection) {
-        return;
+    xml_node<>* connection_list = syn_node->first_node("ConnectionList");
+    if (fixedprob_connection) {
+        replace_fixedprob_connection (fixedprob_connection, src_name, src_num, dst_population);
+    } else if (connection_list) {
+        // Check if it's already binary, if not, expand.
+//        connection_list_to_binary (connection_list, src_name, src_num, dst_population
     }
-    replace_fixedprob_connection (fixedprob_connection, src_name, src_num, dst_population);
-    // Plus any other modifications which need to be made...
 }
 
 void
@@ -283,8 +332,6 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
                                               const string& src_num,
                                               const string& dst_population)
 {
-    cout << __FUNCTION__ << " called" << endl;
-
     // Get the FixedProbability probabilty and seed from this bit of the model.xml:
     // <FixedProbabilityConnection probability="0.11" seed="123">
     float probabilityValue = 0;
@@ -295,7 +342,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
             fp_probability = fp_probability_attr->value();
         } else {
             // failed to get probability; can't proceed.
-            throw runtime_error ("Failed to get FixedProbability's probability attr from model.xml");
+            throw runtime_error ("Failed to get FixedProbability's probability attr from xml");
         }
         stringstream ss;
         ss << fp_probability;
@@ -339,7 +386,8 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
                     throw runtime_error (ee.str());
                 }
             }
-            // Do we have a FixedValue distribution?
+            // Delays can be fixed value, uniform, normal or "none". If "none" then the
+            // Delay element just looks like this: <Delay dimension="ms"/>
             xml_node<>* delay_value_node = delay_node->first_node ("FixedValue");
             xml_node<>* delay_normal_node = delay_node->first_node ("NormalDistribution");
             xml_node<>* delay_uniform_node = delay_node->first_node ("UniformDistribution");

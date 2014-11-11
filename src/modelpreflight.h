@@ -64,7 +64,53 @@ namespace spineml
                                    const std::string& src_name, const std::string& src_num);
 
         /*!
-         * Process the synapse. Search for KernelConnection and modify if found.
+         * Process the synapse. Search for FixedProbabilityConnection
+         * and modify if found. Also search for ConnectionList
+         * containing explicit <Connection/> elements and replace
+         * those with a binary explicit list.
+         *
+         * Not sure whether to process other synapses - in particular
+         * ANY synapse connectivity type may contain a random
+         * distribution Delay element. For now, I'll NOT process these.
+         *
+         * Here are the connection types encountered:
+         *
+         * OneToOne - leave unmodified
+         *  <LL:Synapse>
+         *      <OneToOneConnection>
+         *          <Delay Dimension="ms">
+         *              <FixedValue value="3"/>
+         *          </Delay>
+         *      </OneToOneConnection>
+         *
+         * AllToAll - leave unmodified
+         *
+         *  <LL:Synapse>
+         *      <AllToAllConnection>
+         *          <Delay Dimension="ms">
+         *              <FixedValue value="4"/>
+         *          </Delay>
+         *      </AllToAllConnection>
+         *
+         * FixedProbability - replace connectivity and delay with expl. list.
+         *
+         *   <LL:Synapse>
+         *      <FixedProbabilityConnection probability="0.01" seed="123">
+         *          <Delay Dimension="ms">
+         *              <NormalDistribution mean="0" variance="1" seed="123"/>
+         *          </Delay>
+         *      </FixedProbabilityConnection>
+         *
+         * Explicit list in XML - replace with explicit binary list:
+         *
+         *  <LL:Synapse>
+         *      <ConnectionList>
+         *          <Connection src_neuron="1" dst_neuron="2" delay="4"/>
+         *          <Connection src_neuron="1" dst_neuron="3" delay="5"/>
+         *      </ConnectionList>
+         *
+         * Finally KernelConnection is deprecated and will be removed
+         * in a future version of SpineCreator.
          */
         void preflight_synapse (rapidxml::xml_node<>* proj_node,
                                 const std::string& src_name, const std::string& src_num,
@@ -102,8 +148,8 @@ namespace spineml
 
         /*!
          * Replace a fixed value or random distribution state variable
-         * property with an explicit binary file. For example, replace
-         * this:
+         * property with an explicit binary file. For example, if it's
+         * a fixed value property replace this:
          *
          * <Property name="m" dimension="?">
          *   <FixedValue value="1"/>
@@ -124,6 +170,11 @@ namespace spineml
          * preflight) or a parameter (which we shouldn't).
          */
         void replace_statevar_property (rapidxml::xml_node<>* prop_node, unsigned int pop_size);
+
+        /*!
+         * Generate the next file path for an explicit data file.
+         */
+        std::string nextExplicitDataPath (void);
 
         /*!
          * A little utility. Given a unixPath containing "blah.xml",

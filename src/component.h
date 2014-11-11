@@ -14,19 +14,19 @@
 namespace spineml
 {
     /*!
-     * A class to represent a Component - stores relevant information
-     * from the component's XML file for later use. Only stores what
-     * is relevant to preflighting.
+     * A class to represent a SpineML component - reads and then
+     * stores relevant information from the component's XML file for
+     * later use. It only stores what is relevant to preflighting.
      */
     class Component
     {
     public:
-        Component(const std::string& d, const std::string& n)
-            : dir(d)
-            , name(n)
-            , root_node((rapidxml::xml_node<>*)0)
-            , class_node((rapidxml::xml_node<>*)0) { this->read(); }
-        ~Component() {}
+        /*!
+         * Constructor takes a directory path @d and a component name
+         * @n. The component XML file is expected to be called @n.xml
+         * and found in @d.
+         */
+        Component(const std::string& d, const std::string& n);
 
         /*!
          * Output a comma separated list of the state variable names.
@@ -90,12 +90,6 @@ namespace spineml
          * this component.
          */
         std::map<std::string, std::string> stateVariables;
-
-        /*!
-         * The map of parameter names to their dimensions for this
-         * component.
-         */
-        std::map<std::string, std::string> parameters;
 
         /*!
          * An object into which to read the xml text prior to parsing.

@@ -1,3 +1,9 @@
+/*
+ * Implementation of Component class.
+ * Author: Seb James
+ * Date: Nov 2014
+ */
+
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -7,6 +13,15 @@
 using namespace std;
 using namespace rapidxml;
 using namespace spineml;
+
+Component::Component(const string& d, const string& n)
+    : dir(d)
+    , name(n)
+    , root_node((xml_node<>*)0)
+    , class_node((xml_node<>*)0)
+{
+    this->read();
+}
 
 void
 Component::read (void)

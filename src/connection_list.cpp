@@ -1,4 +1,8 @@
-#include "connection_list.h"
+/*
+ * Implementation of ConnectionList class
+ * Author: Seb James
+ * Date: Nov 2014
+ */
 
 #include <vector>
 #include <iostream>
@@ -8,6 +12,7 @@
 #include "rng.h"
 #include "rapidxml.hpp"
 #include "rapidxml_print.hpp"
+#include "connection_list.h"
 
 using namespace std;
 using namespace rapidxml;
@@ -114,15 +119,6 @@ ConnectionList::generateFixedProbability (const int& seed, const float& probabil
             this->connectivityC2D.reserve(this->connectivityC2D.capacity()+dstNum);
         }
     }
-
-    // set up the number of connections
-    int numConn = this->connectivityC2D.size();
-
-    // Ok, having made up the connectivity maps as above, write them
-    // out into a connection binary file. Name these
-    // pf_connectionN.bin as opposed to just connection.bin to
-    // distinguish them.
-    cout << "numConn is " << numConn << endl;
 }
 
 void

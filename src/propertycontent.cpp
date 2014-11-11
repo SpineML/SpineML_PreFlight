@@ -1,3 +1,9 @@
+/*
+ * Implementation of PropertyContent class.
+ * Author: Seb James
+ * Date: Nov 2014
+ */
+
 #include <string>
 #include <sstream>
 #include <fstream>

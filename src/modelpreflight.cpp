@@ -322,8 +322,71 @@ ModelPreflight::preflight_synapse (xml_node<> *syn_node,
         replace_fixedprob_connection (fixedprob_connection, src_name, src_num, dst_population);
     } else if (connection_list) {
         // Check if it's already binary, if not, expand.
-//        connection_list_to_binary (connection_list, src_name, src_num, dst_population
+        connection_list_to_binary (connection_list, src_name, src_num, dst_population);
     }
+}
+
+void
+ModelPreflight::connection_list_to_binary (xml_node<> *connlist_node,
+                                           const string& src_name,
+                                           const string& src_num,
+                                           const string& dst_population)
+{
+    xml_node<>* binaryfile = connlist_node->first_node("BinaryFile");
+    if (binaryfile) {
+        // No further work to do; this ConnectionList is already a binary list.
+        return;
+    }
+
+    // Ok, no binary file, so convert.
+    spineml::ConnectionList cl;
+
+    // Read XML to get each connection and insert this into ConnectionList.
+    int c_idx = 0; // Connection index
+    int src, dst; float delay;
+    xml_attribute<>* src_attr;
+    xml_attribute<>* dst_attr;
+    xml_attribute<>* delay_attr;
+    for (xml_node<> *conn_node = connlist_node->first_node("Connection");
+         conn_node;
+         conn_node = conn_node->next_sibling("Connection"), c_idx++) {
+
+        if ((src_attr = conn_node->first_attribute ("src_neuron"))) {
+            stringstream ss;
+            ss << src_attr->value();
+            ss >> src;
+        } else {
+            throw runtime_error ("Failed to get src_neuron, malformed XML.");
+        }
+
+        if ((dst_attr = conn_node->first_attribute ("dst_neuron"))) {
+            stringstream ss;
+            ss << dst_attr->value();
+            ss >> dst;
+        } else {
+            throw runtime_error ("Failed to get dst_neuron, malformed XML.");
+        }
+
+        if ((delay_attr = conn_node->first_attribute ("delay"))) {
+            stringstream ss;
+            ss << delay_attr->value();
+            ss >> delay;
+        } else {
+            throw runtime_error ("Failed to get delay, malformed XML.");
+        }
+
+        // Ensure connectivityS2C is large enough for the sources.
+        if (src >= cl.connectivityS2C.size()) {
+            cl.connectivityS2C.reserve(++src);
+            cl.connectivityS2C.resize(src--);
+        }
+        cl.connectivityS2C[src].push_back (c_idx); // bad_alloc
+        cl.connectivityC2D.push_back (dst);
+        cl.connectivityC2Delay.push_back (delay);
+    }
+
+    // Lastly, write these out:
+    this->write_connection_out (connlist_node, cl);
 }
 
 void
@@ -364,89 +427,8 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
         ss >> seed;
     }
 
-    // The connection list object which we'll populate.
     spineml::ConnectionList cl;
-    {
-        float dimMultiplier = 1.0;
-        xml_node<>* delay_node = fixedprob_node->first_node ("Delay");
-        if (delay_node) {
-            xml_attribute<>* dim_attr = delay_node->first_attribute ("Dimension");
-            if (dim_attr) {
-                cl.delayDimension = dim_attr->value();
-                if (cl.delayDimension == "ms") {
-                    // This is the dimension we need - all delays in
-                    // the ConnectionList need to be stored in
-                    // ms. Leave dimMultiplier at its original value
-                    // of 1.
-                } else if (cl.delayDimension == "s") {
-                    dimMultiplier = 1000.0; // to convert to ms
-                } else {
-                    stringstream ee;
-                    ee << "Unknown delay dimension '" << cl.delayDimension << "'";
-                    throw runtime_error (ee.str());
-                }
-            }
-            // Delays can be fixed value, uniform, normal or "none". If "none" then the
-            // Delay element just looks like this: <Delay dimension="ms"/>
-            xml_node<>* delay_value_node = delay_node->first_node ("FixedValue");
-            xml_node<>* delay_normal_node = delay_node->first_node ("NormalDistribution");
-            xml_node<>* delay_uniform_node = delay_node->first_node ("UniformDistribution");
-            if (delay_value_node) {
-                cl.delayDistributionType = spineml::Dist_FixedValue;
-                xml_attribute<>* value_attr = delay_value_node->first_attribute ("value");
-                if (value_attr) {
-                    stringstream ss;
-                    ss << value_attr->value();
-                    ss >> cl.delayFixedValue;
-                    cl.delayFixedValue *= dimMultiplier;
-                }
-            } else if (delay_normal_node) {
-                cl.delayDistributionType = spineml::Dist_Normal;
-                xml_attribute<>* mean_attr = delay_normal_node->first_attribute ("mean");
-                if (mean_attr) {
-                    stringstream ss;
-                    ss << mean_attr->value();
-                    ss >> cl.delayMean;
-                    cl.delayMean *= dimMultiplier;
-                }
-                xml_attribute<>* variance_attr = delay_normal_node->first_attribute ("variance");
-                if (variance_attr) {
-                    stringstream ss;
-                    ss << variance_attr->value();
-                    ss >> cl.delayVariance;
-                    cl.delayVariance *= dimMultiplier;
-                }
-                xml_attribute<>* seed_attr = delay_normal_node->first_attribute ("seed");
-                if (seed_attr) {
-                    stringstream ss;
-                    ss << seed_attr->value();
-                    ss >> cl.delayDistributionSeed;
-                }
-            } else if (delay_uniform_node) {
-                cl.delayDistributionType = spineml::Dist_Uniform;
-                xml_attribute<>* minimum_attr = delay_uniform_node->first_attribute ("minimum");
-                if (minimum_attr) {
-                    stringstream ss;
-                    ss << minimum_attr->value();
-                    ss >> cl.delayRangeMin;
-                    cl.delayRangeMin *= dimMultiplier;
-                }
-                xml_attribute<>* maximum_attr = delay_uniform_node->first_attribute ("maximum");
-                if (maximum_attr) {
-                    stringstream ss;
-                    ss << maximum_attr->value();
-                    ss >> cl.delayRangeMax;
-                    cl.delayRangeMax *= dimMultiplier;
-                }
-                xml_attribute<>* seed_attr = delay_uniform_node->first_attribute ("seed");
-                if (seed_attr) {
-                    stringstream ss;
-                    ss << seed_attr->value();
-                    ss >> cl.delayDistributionSeed;
-                }
-            }
-        }
-    }
+    this->setup_connection_delays (fixedprob_node, cl);
 
     unsigned int srcNum = 0;
     {
@@ -459,7 +441,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
          << ", srcNum: " << srcNum << endl;
 
     // Find the number of neurons in the destination population
-    int dstNum_ = find_num_neurons (dst_population);
+    int dstNum_ = this->find_num_neurons (dst_population);
     unsigned int dstNum(0);
     if (dstNum_ != -1) {
         dstNum = static_cast<unsigned int>(dstNum_);
@@ -473,10 +455,102 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
     cl.setSampleDt (exptSampleDt);
 #endif
     cl.generateDelays();
+
+    this->write_connection_out (fixedprob_node, cl);
+}
+
+void
+ModelPreflight::setup_connection_delays (xml_node<> *parent_node, ConnectionList& cl)
+{
+    // The connection list object which we'll populate.
+    float dimMultiplier = 1.0;
+    xml_node<>* delay_node = parent_node->first_node ("Delay");
+    if (delay_node) {
+        xml_attribute<>* dim_attr = delay_node->first_attribute ("Dimension");
+        if (dim_attr) {
+            cl.delayDimension = dim_attr->value();
+            if (cl.delayDimension == "ms") {
+                // This is the dimension we need - all delays in
+                // the ConnectionList need to be stored in
+                // ms. Leave dimMultiplier at its original value
+                // of 1.
+            } else if (cl.delayDimension == "s") {
+                dimMultiplier = 1000.0; // to convert to ms
+            } else {
+                stringstream ee;
+                ee << "Unknown delay dimension '" << cl.delayDimension << "'";
+                throw runtime_error (ee.str());
+            }
+        }
+        // Delays can be fixed value, uniform, normal or "none". If "none" then the
+        // Delay element just looks like this: <Delay dimension="ms"/>
+        xml_node<>* delay_value_node = delay_node->first_node ("FixedValue");
+        xml_node<>* delay_normal_node = delay_node->first_node ("NormalDistribution");
+        xml_node<>* delay_uniform_node = delay_node->first_node ("UniformDistribution");
+        if (delay_value_node) {
+            cl.delayDistributionType = spineml::Dist_FixedValue;
+            xml_attribute<>* value_attr = delay_value_node->first_attribute ("value");
+            if (value_attr) {
+                stringstream ss;
+                ss << value_attr->value();
+                ss >> cl.delayFixedValue;
+                cl.delayFixedValue *= dimMultiplier;
+            }
+        } else if (delay_normal_node) {
+            cl.delayDistributionType = spineml::Dist_Normal;
+            xml_attribute<>* mean_attr = delay_normal_node->first_attribute ("mean");
+            if (mean_attr) {
+                stringstream ss;
+                ss << mean_attr->value();
+                ss >> cl.delayMean;
+                cl.delayMean *= dimMultiplier;
+            }
+            xml_attribute<>* variance_attr = delay_normal_node->first_attribute ("variance");
+            if (variance_attr) {
+                stringstream ss;
+                ss << variance_attr->value();
+                ss >> cl.delayVariance;
+                cl.delayVariance *= dimMultiplier;
+            }
+            xml_attribute<>* seed_attr = delay_normal_node->first_attribute ("seed");
+            if (seed_attr) {
+                stringstream ss;
+                ss << seed_attr->value();
+                ss >> cl.delayDistributionSeed;
+            }
+        } else if (delay_uniform_node) {
+            cl.delayDistributionType = spineml::Dist_Uniform;
+            xml_attribute<>* minimum_attr = delay_uniform_node->first_attribute ("minimum");
+            if (minimum_attr) {
+                stringstream ss;
+                ss << minimum_attr->value();
+                ss >> cl.delayRangeMin;
+                cl.delayRangeMin *= dimMultiplier;
+            }
+            xml_attribute<>* maximum_attr = delay_uniform_node->first_attribute ("maximum");
+            if (maximum_attr) {
+                stringstream ss;
+                ss << maximum_attr->value();
+                ss >> cl.delayRangeMax;
+                cl.delayRangeMax *= dimMultiplier;
+            }
+            xml_attribute<>* seed_attr = delay_uniform_node->first_attribute ("seed");
+            if (seed_attr) {
+                stringstream ss;
+                ss << seed_attr->value();
+                ss >> cl.delayDistributionSeed;
+            }
+        }
+    }
+}
+
+void
+ModelPreflight::write_connection_out (xml_node<> *parent_node, ConnectionList& cl)
+{
     string binfilepath ("pf_connection");
     stringstream numss;
     numss << this->binfilenum++;
     binfilepath += numss.str();
     binfilepath += ".bin";
-    cl.write (fixedprob_node, this->modeldir, binfilepath);
+    cl.write (parent_node, this->modeldir, binfilepath);
 }

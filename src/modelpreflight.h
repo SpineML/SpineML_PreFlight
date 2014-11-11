@@ -13,6 +13,7 @@
 #include "rapidxml.hpp"
 #include "allocandread.h"
 #include "component.h"
+#include "connection_list.h"
 
 /*!
  * It may be that we need to run this for HL and LL models.
@@ -145,6 +146,44 @@ namespace spineml
                                            const std::string& src_name,
                                            const std::string& src_num,
                                            const std::string& dst_population);
+
+        /*!
+         * Do the work of replacing an XML-only ConnectionList connection with a
+         * BinaryFile ConnectionList
+         *
+         * Go from this:
+         *          <LL:Synapse>
+         *               <ConnectionList>
+         *                   <Connection src_neuron="1" dst_neuron="2" delay="7"/>
+         *                   <Connection src_neuron="1" dst_neuron="3" delay="7"/>
+         *                   <Connection src_neuron="2" dst_neuron="4" delay="6"/>
+         *                   <Connection src_neuron="2" dst_neuron="5" delay="7"/>
+         *               </ConnectionList>
+         *
+         * to this:
+         *          <LL:Synapse>
+         *               <ConnectionList>
+         *                   <BinaryFile file_name="connection0.bin" num_connections="4"
+         *                               explicit_delay_flag="1" packed_data="true"/>
+         *               </ConnectionList>
+         */
+        void connection_list_to_binary (rapidxml::xml_node<> *connlist_node,
+                                        const std::string& src_name,
+                                        const std::string& src_num,
+                                        const std::string& dst_population);
+
+        /*!
+         * Configure connection delays in @param cl using the delays specified in
+         * parent_node.
+         */
+        void setup_connection_delays (rapidxml::xml_node<> *parent_node,
+                                      spineml::ConnectionList& cl);
+
+        /*!
+         * Write out the pf_connectionN.bin file out.
+         */
+        void write_connection_out (rapidxml::xml_node<> *parent_node,
+                                   spineml::ConnectionList& cl);
 
         /*!
          * Replace a fixed value or random distribution state variable

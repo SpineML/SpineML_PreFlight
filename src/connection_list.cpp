@@ -50,7 +50,8 @@ ConnectionList::ConnectionList (unsigned int srcNum, unsigned int dstNum)
 }
 
 void
-ConnectionList::write (xml_node<>* into_node, const string& model_root, const string& binary_file_name)
+ConnectionList::write (xml_node<>* into_node, const string& model_root,
+                       const string& binary_file_name)
 {
     this->writeXml (into_node, model_root, binary_file_name);
     this->writeBinary (into_node, model_root, binary_file_name);

@@ -191,6 +191,11 @@ namespace spineml
          * lists. This covers a one to many connection scheme, where
          * one neuron on the source population connects to many
          * neurons in the destination population.
+         *
+         * This is a vector of vector<int> because that's the way it's
+         * coded in the SpineML_2_BRAHMS code. For conversion of
+         * explicit lists of delays, it could make more sense for this
+         * to be map<vector<int> >
          */
         std::vector<std::vector<int> > connectivityS2C;
 

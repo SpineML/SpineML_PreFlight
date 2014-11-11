@@ -16,7 +16,8 @@
 #include "connection_list.h"
 
 /*!
- * It may be that we need to run this for HL and LL models.
+ * It may be that we need to run this for HL and LL models, in which
+ * case this would become a runtime-determined string.
  */
 #define LVL "LL:"
 
@@ -221,6 +222,7 @@ namespace spineml
          */
         void stripFileSuffix (std::string& unixPath);
 
+    private:
         /*!
          * Name of the XML text file.
          */

@@ -59,13 +59,6 @@ namespace spineml
 
             doc.parse<rapidxml::parse_declaration_node | rapidxml::parse_no_data_nodes>(textptr);
 
-#ifdef WANT_TO_SEE_ENCODING
-            if (doc.first_node()->first_attribute("encoding")) {
-                std::string encoding = doc.first_node()->first_attribute("encoding")->value();
-                std::cout << "encoding: " << encoding << std::endl;
-            }
-#endif
-
             // NB: This really DOES have to be the root node.
             rapidxml::xml_node<>* root_node = doc.first_node("SpineML");
             if (!root_node) {

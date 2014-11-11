@@ -70,11 +70,6 @@ namespace spineml
         void readStateVariable (const rapidxml::xml_node<>* sv_node);
 
         /*!
-         * Read parameters and their dimensions.
-         */
-        void readParameters (void);
-
-        /*!
          * Directory containing the component's xml file. This should
          * include the trailing slash.
          */

@@ -22,10 +22,6 @@ ConnectionList::ConnectionList ()
     , delayRangeMax(0)
     , delayDistributionSeed(123)
     , delayDimension("")
-#ifdef NEED_SAMPLE_TIMESTEP
-    , sampleDt(-1.0)
-    , sampleDt_ms(-1.0)
-#endif
 {
 }
 
@@ -38,10 +34,6 @@ ConnectionList::ConnectionList (unsigned int srcNum, unsigned int dstNum)
     , delayRangeMax(0)
     , delayDistributionSeed(123)
     , delayDimension("")
-#ifdef NEED_SAMPLE_TIMESTEP
-    , sampleDt(-1.0)
-    , sampleDt_ms(-1.0)
-#endif
 {
     // run through connections, creating connectivity pattern:
     this->connectivityS2C.reserve (srcNum); // probably src_num.
@@ -133,15 +125,6 @@ ConnectionList::generateFixedProbability (const int& seed, const float& probabil
     cout << "numConn is " << numConn << endl;
 }
 
-#ifdef NEED_SAMPLE_TIMESTEP
-void
-ConnectionList::setSampleDt (const float& dt_seconds)
-{
-    this->sampleDt = dt_seconds;
-    this->sampleDt_ms = dt_seconds * 1000.0;
-}
-#endif
-
 void
 ConnectionList::generateNormalDelays (void)
 {
@@ -153,14 +136,6 @@ ConnectionList::generateNormalDelays (void)
     rngData.seed = static_cast<int>(this->delayDistributionSeed);
 
     float max_delay_val = 0;
-
-#ifdef NEED_SAMPLE_TIMESTEP
-    if (this->sampleDt < 0) {
-        // Error - sampleDt unset!
-        throw runtime_error ("ConnectionList::generateNormalDelays: sample timestep must be set.");
-    }
-    cout << "sampleDt_ms: " << this->sampleDt_ms << endl; // in seconds.
-#endif
 
     this->connectivityC2Delay.resize (this->connectivityC2D.size());
 
@@ -177,10 +152,6 @@ ConnectionList::generateNormalDelays (void)
         if (this->connectivityC2Delay[i] < 0) {
             this->connectivityC2Delay[i] = 0;
         }
-
-#ifdef DEBUG
-        cout << i << "," << this->connectivityC2Delay[i] << endl;
-#endif
 
         if (this->connectivityC2Delay[i] > max_delay_val) {
             max_delay_val = this->connectivityC2Delay[i];
@@ -207,16 +178,13 @@ ConnectionList::generateUniformDelays (void)
 
     for (unsigned int i = 0; i < this->connectivityC2Delay.size(); ++i) {
 
-        this->connectivityC2Delay[i] = (_randomUniform(&rngData) * (this->delayRangeMax - this->delayRangeMin)
+        this->connectivityC2Delay[i] = (_randomUniform(&rngData)
+                                        * (this->delayRangeMax - this->delayRangeMin)
                                         + this->delayRangeMin);
 
         if (this->connectivityC2Delay[i] < 0) {
             this->connectivityC2Delay[i] = 0;
         }
-
-#ifdef DEBUG
-        cout << i << "," << this->connectivityC2Delay[i] << endl;
-#endif
 
         if (this->connectivityC2Delay[i] > max_delay_val) {
             max_delay_val = this->connectivityC2Delay[i];
@@ -255,7 +223,7 @@ ConnectionList::writeBinary (xml_node<>* into_node,
         ee << __FUNCTION__ << " Failed to open file '" << path << "' for writing.";
         throw runtime_error (ee.str());
     }
-    cerr << "Opened file " << path << endl;
+    cout << "Opened connection binary file " << path << endl;
 
     // Iterate over the vectors of source connection
     while (s != this->connectivityS2C.end() && d != this->connectivityC2D.end()) {
@@ -263,14 +231,10 @@ ConnectionList::writeBinary (xml_node<>* into_node,
         c = s->begin();
 
         while (c != s->end()) {
-#ifdef DEBUG
-            cout << "S:" << static_cast<int>(s-s_begin) << ",D:"<< *(d) << endl;
-#endif
             // File output
             f.write (reinterpret_cast<const char*>(&(s_idx)), sizeof(int));
             f.write (reinterpret_cast<const char*>(&(*d)), sizeof(int));
             f.write (reinterpret_cast<const char*>(&(*dly)), sizeof(float));
-
             ++c;
             ++d;
             ++dly;
@@ -297,37 +261,6 @@ ConnectionList::writeXml (xml_node<>* into_node,
     // (e.g. FixedProbabilityConnection) to ConnectionList.
     into_node->name("ConnectionList");
 
-#ifdef WRITE_DELAY_NODE
-    // 3. Add the Delay node.
-    // Which type of Delay distribution do we have? For
-    // uniform/normal, we write delays into the explicit list. Perhaps
-    // we also do this for FixedValue, though we could instead write
-    // Fixed Value into a Delay element.
-    xml_node<>* distribution_node;
-    if (this->delayDistributionType == spineml::Dist_FixedValue) {
-        distribution_node = thedoc->allocate_node (node_element, "FixedValue");
-        stringstream delay_ss;
-        delay_ss << this->delayFixedValue;
-        // Note that we have to allocate memory in the document pool prior to allocating attributes:
-        char* delay_alloced = thedoc->allocate_string(delay_ss.str().c_str());
-        xml_attribute<>* v_attr = thedoc->allocate_attribute ("value", delay_alloced);
-        distribution_node->append_attribute (v_attr);
-    } else {
-        // Other distributions to be written out explicitly into connection binary files..
-    }
-
-    // Now we've build the content of the Delay node, we can create Delay:
-    xml_node<>* delay_node = thedoc->allocate_node (node_element, "Delay", "");
-    cout << "delayDimension: " << this->delayDimension << endl;
-    //char* delaydim_alloced = thedoc->allocate_string(this->delayDimension.c_str());
-    //xml_attribute<>* d_attr = thedoc->allocate_attribute ("Dimension", delaydim_alloced);
-    xml_attribute<>* d_attr = thedoc->allocate_attribute ("Dimension", "ms");
-    delay_node->append_attribute (d_attr);
-    delay_node->append_node (distribution_node);
-
-    into_node->append_node (delay_node);
-#endif
-
     // 4. Add the BinaryFile node
     xml_node<>* binfile_node = thedoc->allocate_node (node_element, "BinaryFile");
     char* bfn_alloced = thedoc->allocate_string (binary_file_name.c_str());
@@ -338,9 +271,6 @@ ConnectionList::writeXml (xml_node<>* into_node,
     char* nc_alloced = thedoc->allocate_string(nc_ss.str().c_str());
     xml_attribute<>* num_connections_attr = thedoc->allocate_attribute ("num_connections", nc_alloced);
     // We're always going to explicitly list the delay for each connection:
-#ifdef WRITE_DELAY_NODE
-    throw runtime_error("Do something other than the next line.");
-#endif
     xml_attribute<>* explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay_flag", "1");
 
     binfile_node->append_attribute (file_name_attr);

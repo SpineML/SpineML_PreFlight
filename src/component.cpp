@@ -29,11 +29,11 @@ Component::read (void)
     }
 
     // Now extract the information we want from this component xml
-    // file; type, name (for verification), state variables and
-    // parameters.
+    // file; type, name (for verification), state variables (and if we
+    // needed them, parameters, but we don't need those, so they're
+    // ignored).
     this->readNameAndType();
     this->readStateVariables();
-    this->readParameters();
 
     // Free up this->doc.
     delete this->doc;
@@ -123,11 +123,4 @@ Component::containsStateVariable (const string& sv)
         return true;
     }
     return false;
-}
-
-
-void
-Component::readParameters (void)
-{
-    // Actually, nothing here - ignore parameters.
 }

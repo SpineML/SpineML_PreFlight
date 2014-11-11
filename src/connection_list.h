@@ -149,13 +149,6 @@ namespace spineml
         void generateFixedProbability (const int& seed, const float& probability,
                                        const unsigned int& srcNum, const unsigned int& dstNum);
 
-#ifdef NEED_SAMPLE_TIMESTEP
-        /*!
-         * Set sampleDt, passing in the timestep in seconds.
-         */
-        void setSampleDt (const float& dt_seconds);
-#endif
-
     private:
 
         /*!
@@ -279,20 +272,6 @@ namespace spineml
          * Dimensions string for the delay. E.g. "ms".
          */
         std::string delayDimension;
-
-    private:
-#ifdef NEED_SAMPLE_TIMESTEP
-        /*!
-         * The sample timestep in s. This has to be passed in as a
-         * command line option to the spineml_preflight program. It's
-         * used when generating the delays according to a random
-         * distribution.
-         */
-        //@{
-        float sampleDt;
-        float sampleDt_ms;
-        //@}
-#endif
     };
 
 } // namespace spineml

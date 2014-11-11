@@ -71,12 +71,6 @@ namespace spineml
             return this->data_;
         }
 
-        std::string getDataString (void) const
-        {
-            std::string rtn (this->data_);
-            return rtn;
-        }
-
         size_t getsize (void) const
         {
             return this->sz;

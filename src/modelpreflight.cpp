@@ -74,12 +74,6 @@ ModelPreflight::preflight (void)
     // >>> note that this will skip parsing of CDATA nodes <<<
     this->doc.parse<parse_declaration_node | parse_no_data_nodes>(this->modeldata.data());
 
-#ifdef CARE_ABOUT_ENCODING
-    if (this->doc.first_node()->first_attribute("encoding")) {
-        string encoding = this->doc.first_node()->first_attribute("encoding")->value();
-    }
-#endif
-
     // Get the root node.
     this->root_node = this->doc.first_node (LVL"SpineML");
     if (!this->root_node) {
@@ -451,9 +445,6 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
     cout << "dstNum: " << dstNum << endl;
 
     cl.generateFixedProbability (seed, probabilityValue, srcNum, dstNum);
-#ifdef NEED_SAMPLE_TIMESTEP
-    cl.setSampleDt (exptSampleDt);
-#endif
     cl.generateDelays();
 
     this->write_connection_out (fixedprob_node, cl);

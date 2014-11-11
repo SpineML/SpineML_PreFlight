@@ -135,9 +135,6 @@ ConnectionList::generateNormalDelays (void)
 
     this->connectivityC2Delay.resize (this->connectivityC2D.size());
 
-    cout << "Delays: Normal distribution with mean " << this->delayMean
-         << " and variance " << this->delayVariance << endl;
-
     for (unsigned int i = 0; i < this->connectivityC2Delay.size(); ++i) {
 
         // NB: delayVariance and delayMean HAVE to be in
@@ -166,9 +163,6 @@ ConnectionList::generateUniformDelays (void)
     rngData.seed = static_cast<int>(this->delayDistributionSeed);
 
     this->connectivityC2Delay.resize (this->connectivityC2D.size());
-
-    cout << "Delays: Uniform distribution with min " << this->delayRangeMin
-         << " and max " << this->delayRangeMax << endl;
 
     float max_delay_val = 0;
 
@@ -219,7 +213,11 @@ ConnectionList::writeBinary (xml_node<>* into_node,
         ee << __FUNCTION__ << " Failed to open file '" << path << "' for writing.";
         throw runtime_error (ee.str());
     }
-    cout << "Opened connection binary file " << path << endl;
+    cout << "Preflight: Opened connection binary file " << path << endl;
+
+    if (this->connectivityC2D.empty()) {
+        cout << "Preflight: WARNING: no connectivity between source and destination populations!\n";
+    }
 
     // Iterate over the vectors of source connection
     while (s != this->connectivityS2C.end() && d != this->connectivityC2D.end()) {

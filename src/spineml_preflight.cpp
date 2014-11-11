@@ -30,21 +30,25 @@ using namespace std;
 
 void stripUnixFile (std::string& unixPath)
 {
-        string::size_type pos (unixPath.find_last_of ('/'));
-        if (pos != string::npos) {
-                unixPath = unixPath.substr (0, pos);
-        }
+    string::size_type pos (unixPath.find_last_of ('/'));
+    if (pos != string::npos) {
+        unixPath = unixPath.substr (0, pos);
+    }
 }
 
+/*
+ * libpopt features - the features that are available to change on the
+ * command line.
+ */
 struct features {
-    char * expt_path;
-    int backup_model;
+    char * expt_path; // -e option
+    int backup_model; // -b option
 };
 
 void zeroFeatures (struct features * f)
 {
-        f->expt_path = NULL;
-        f->backup_model = 0;
+    f->expt_path = NULL;
+    f->backup_model = 0;
 }
 
 int main (int argc, char * argv[])
@@ -70,14 +74,14 @@ int main (int argc, char * argv[])
 
     try {
         if (f.expt_path == NULL) {
-            throw runtime_error ("Please supply the path to experiment xml file with the -e option.");
+            throw runtime_error ("Please supply the path to experiment xml file "
+                                 "with the -e option.");
         }
         spineml::Experiment expt (f.expt_path);
 
         string model_dir(f.expt_path);
         stripUnixFile (model_dir);
         model_dir += "/";
-        cout << "Model directory: " << model_dir << endl;
 
         // Fixme: Get path from the expt above and use below:
         spineml::ModelPreflight model (model_dir, expt.modelUrl());
@@ -87,8 +91,9 @@ int main (int argc, char * argv[])
         model.preflight();
         // Write out the now modified xml:
         model.write();
+        cout << "Preflight Finished.\n";
     } catch (const exception& e) {
-        cerr << "Error thrown: " << e.what() << endl;
+        cout << "Preflight Error: " << e.what() << endl;
         rtn = -1;
     }
 

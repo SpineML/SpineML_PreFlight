@@ -24,7 +24,7 @@ namespace spineml
     {
     public:
         /*!
-         * Constructors and destructor
+         * Constructors
          */
         //@{
         Experiment()
@@ -43,7 +43,6 @@ namespace spineml
         {
             this->parse();
         }
-        ~Experiment() {}
         //@}
 
         /*!
@@ -62,20 +61,17 @@ namespace spineml
             // NB: This really DOES have to be the root node.
             rapidxml::xml_node<>* root_node = doc.first_node("SpineML");
             if (!root_node) {
-                std::cerr << "no root SpineML node\n";
-                return;
+                throw std::runtime_error ("experiment XML: no root SpineML node");
             }
 
             rapidxml::xml_node<>* expt_node = root_node->first_node ("Experiment");
             if (!expt_node) {
-                std::cerr << "no Experiment node\n";
-                return;
+                throw std::runtime_error ("experiment XML: no Experiment node");
             }
 
             rapidxml::xml_node<>* model_node = expt_node->first_node ("Model");
             if (!model_node) {
-                std::cerr << "no Model node\n";
-                return;
+                throw std::runtime_error ("experiment XML: no Model node");
             }
             rapidxml::xml_attribute<>* url_attr;
             if ((url_attr = model_node->first_attribute ("network_layer_url"))) {
@@ -84,8 +80,7 @@ namespace spineml
 
             rapidxml::xml_node<>* sim_node = expt_node->first_node ("Simulation");
             if (!sim_node) {
-                std::cerr << "no Simulation node\n";
-                return;
+                throw std::runtime_error ("experiment XML: no Simulation node");
             }
 
             // Find duration
@@ -144,12 +139,6 @@ namespace spineml
     private:
         //! Path to the experiment xml file.
         std::string filepath;
-
-        //! Expt name, no need for this.
-        //std::string name;
-
-        //! Expt desc. Also no need
-        //std::string description;
 
         //! Model network layer path.
         std::string network_layer_path;

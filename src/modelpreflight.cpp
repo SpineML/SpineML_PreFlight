@@ -32,7 +32,7 @@ ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname
     this->modeldir = fdir;
     this->modelfile = fname;
     string filepath = this->modeldir + this->modelfile;
-    cout << "Model filepath: " << filepath << endl;
+    cout << "Preflight: Model filepath: " << filepath << endl;
     this->modeldata.read (filepath);
 }
 
@@ -140,12 +140,12 @@ ModelPreflight::stripFileSuffix (string& unixPath)
 }
 
 void
-ModelPreflight::preflight_population (xml_node<> *pop_node)
+ModelPreflight::preflight_population (xml_node<>* pop_node)
 {
     // Within each population: Find the "population name"; this is
     // actually given by the LL:Neuron name attribute; also have a
     // size attr. Then search out projections.
-    xml_node<> *neuron_node = pop_node->first_node(LVL"Neuron");
+    xml_node<>* neuron_node = pop_node->first_node(LVL"Neuron");
     if (!neuron_node) {
         // No src name. Does that mean we return or carry on?
         return;
@@ -159,7 +159,7 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
     } // else failed to get src name
 
     // Output some info to stdout
-    cout << "Preflight population: '" << src_name << "'\n";
+    cout << "Preflight: processing population: '" << src_name << "'\n";
 
     // Now get the component name - this is user specified and there
     // should be an XML file associated with the component with this
@@ -201,7 +201,7 @@ ModelPreflight::preflight_population (xml_node<> *pop_node)
 
     // Now find all Projections out from the neuron and expand any
     // connections into explict lists, as necessary.
-    for (xml_node<> *proj_node = pop_node->first_node(LVL"Projection");
+    for (xml_node<>* proj_node = pop_node->first_node(LVL"Projection");
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
         preflight_projection (proj_node, src_name, src_num);
@@ -284,7 +284,7 @@ ModelPreflight::nextExplicitDataPath (void)
 }
 
 void
-ModelPreflight::preflight_projection (xml_node<> *proj_node,
+ModelPreflight::preflight_projection (xml_node<>* proj_node,
                                       const string& src_name,
                                       const string& src_num)
 {
@@ -296,7 +296,7 @@ ModelPreflight::preflight_projection (xml_node<> *proj_node,
     } // else failed to get src name
 
     // And then for each synapse in the projection:
-    for (xml_node<> *syn_node = proj_node->first_node(LVL"Synapse");
+    for (xml_node<>* syn_node = proj_node->first_node(LVL"Synapse");
          syn_node;
          syn_node = syn_node->next_sibling(LVL"Synapse")) {
         preflight_synapse (syn_node, src_name, src_num, dst_population);
@@ -304,7 +304,7 @@ ModelPreflight::preflight_projection (xml_node<> *proj_node,
 }
 
 void
-ModelPreflight::preflight_synapse (xml_node<> *syn_node,
+ModelPreflight::preflight_synapse (xml_node<>* syn_node,
                                    const string& src_name,
                                    const string& src_num,
                                    const string& dst_population)
@@ -321,7 +321,7 @@ ModelPreflight::preflight_synapse (xml_node<> *syn_node,
 }
 
 void
-ModelPreflight::connection_list_to_binary (xml_node<> *connlist_node,
+ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
                                            const string& src_name,
                                            const string& src_num,
                                            const string& dst_population)
@@ -341,7 +341,7 @@ ModelPreflight::connection_list_to_binary (xml_node<> *connlist_node,
     xml_attribute<>* src_attr;
     xml_attribute<>* dst_attr;
     xml_attribute<>* delay_attr;
-    for (xml_node<> *conn_node = connlist_node->first_node("Connection");
+    for (xml_node<>* conn_node = connlist_node->first_node("Connection");
          conn_node;
          conn_node = conn_node->next_sibling("Connection"), c_idx++) {
 
@@ -384,7 +384,7 @@ ModelPreflight::connection_list_to_binary (xml_node<> *connlist_node,
 }
 
 void
-ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
+ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
                                               const string& src_name,
                                               const string& src_num,
                                               const string& dst_population)
@@ -431,9 +431,6 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
         ss >> srcNum;
     }
 
-    cout << "probability: " << probabilityValue << ", seed: " << seed
-         << ", srcNum: " << srcNum << endl;
-
     // Find the number of neurons in the destination population
     int dstNum_ = this->find_num_neurons (dst_population);
     unsigned int dstNum(0);
@@ -442,7 +439,6 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
     } else {
         throw runtime_error ("Failed to find the number of neurons in the destination population.");
     }
-    cout << "dstNum: " << dstNum << endl;
 
     cl.generateFixedProbability (seed, probabilityValue, srcNum, dstNum);
     cl.generateDelays();
@@ -451,7 +447,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<> *fixedprob_node,
 }
 
 void
-ModelPreflight::setup_connection_delays (xml_node<> *parent_node, ConnectionList& cl)
+ModelPreflight::setup_connection_delays (xml_node<>* parent_node, ConnectionList& cl)
 {
     // The connection list object which we'll populate.
     float dimMultiplier = 1.0;
@@ -536,7 +532,7 @@ ModelPreflight::setup_connection_delays (xml_node<> *parent_node, ConnectionList
 }
 
 void
-ModelPreflight::write_connection_out (xml_node<> *parent_node, ConnectionList& cl)
+ModelPreflight::write_connection_out (xml_node<>* parent_node, ConnectionList& cl)
 {
     string binfilepath ("pf_connection");
     stringstream numss;

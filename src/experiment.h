@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <iostream>
 #include "rapidxml.hpp"
 #include "allocandread.h"
 
@@ -134,6 +135,15 @@ namespace spineml
                 rate = 1.0/this->simFixedDt;
             }
             return rate;
+        }
+
+        /*!
+         * Add the raw property change request, as provided on the
+         * command line. If the request has a bad format, throw an exception.
+         */
+        void addPropertyChangeRequest (const std::string& s)
+        {
+            std::cout << "property change request: " << s << "\n";
         }
 
     private:

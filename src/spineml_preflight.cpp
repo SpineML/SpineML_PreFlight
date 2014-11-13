@@ -40,15 +40,51 @@ void stripUnixFile (std::string& unixPath)
  * libpopt features - the features that are available to change on the
  * command line.
  */
-struct features {
+struct CmdOptions {
     char * expt_path; // -e option
     int backup_model; // -b option
+    char * property_change; // Used temporarily by the prop. change option
+    vector<string> property_changes; // A record of all property changes
 };
 
-void zeroFeatures (struct features * f)
+void zeroCmdOptions (CmdOptions* copts)
 {
-    f->expt_path = NULL;
-    f->backup_model = 0;
+    copts->expt_path = NULL;
+    copts->backup_model = 0;
+    copts->property_change = NULL;
+    copts->property_changes.clear();
+}
+
+/*
+ * Lazily make CmdOptions global; allows callback to access this easily.
+ */
+struct CmdOptions cmdOptions;
+
+/*
+ * This callback is used when there's a -p option, to allow my to
+ * collect multiple property change directives from the user.
+ *
+ * e.g. spineml_preflight --property_change="Pop:tau:43" --property_change="Pop:m:0.203"
+ */
+void property_change_callback (poptContext con,
+                               enum poptCallbackReason reason,
+                               const struct poptOption * opt,
+                               const char * arg,
+                               void * data)
+{
+    switch(reason)
+    {
+    case POPT_CALLBACK_REASON_PRE:
+        // We don't see this
+        break;
+    case POPT_CALLBACK_REASON_POST:
+        // Ignore
+        break;
+    case POPT_CALLBACK_REASON_OPTION:
+        // Do stuff here.
+        cmdOptions.property_changes.push_back (cmdOptions.property_change);
+        break;
+    }
 }
 
 int main (int argc, char * argv[])
@@ -56,16 +92,31 @@ int main (int argc, char * argv[])
     int rtn = 0;
 
     // popt command line argument processing setup
-    struct features f;
-    zeroFeatures (&f);
+    zeroCmdOptions (&cmdOptions);
+
     struct poptOption opt[] = {
         POPT_AUTOHELP
+
         {"expt_path", 'e',
-         POPT_ARG_STRING, &(f.expt_path), 0,
+         POPT_ARG_STRING, &(cmdOptions.expt_path), 0,
          "Provide the path to the experiment.xml file for the model you wish to preflight."},
+
         {"backup_model", 'b',
-         POPT_ARG_NONE, &(f.backup_model), 0,
+         POPT_ARG_NONE, &(cmdOptions.backup_model), 0,
          "If set, make a backup of model.xml as model.xml.bu."},
+
+        // options following this will cause the callback to be executed.
+        { "callback", '\0',
+          POPT_ARG_CALLBACK|POPT_ARGFLAG_DOC_HIDDEN, (void*)&property_change_callback, 0,
+          NULL, NULL },
+
+        {"property_change", 'p',
+         POPT_ARG_STRING, &(cmdOptions.property_change), 0,
+         "Change a property. Provide an argument like \"Population:tau:45\". "
+         "This option can be used multiple times."},
+
+        POPT_AUTOALIAS
+        POPT_AUTOHELP
         POPT_TABLEEND
     };
     poptContext con;
@@ -73,19 +124,27 @@ int main (int argc, char * argv[])
     while (poptGetNextOpt(con) != -1) {}
 
     try {
-        if (f.expt_path == NULL) {
+        if (cmdOptions.expt_path == NULL) {
             throw runtime_error ("Please supply the path to experiment xml file "
                                  "with the -e option.");
         }
-        spineml::Experiment expt (f.expt_path);
 
-        string model_dir(f.expt_path);
+        spineml::Experiment expt (cmdOptions.expt_path);
+
+        vector<string>::const_iterator pciter = cmdOptions.property_changes.begin();
+        while (pciter != cmdOptions.property_changes.end()) {
+            // Add this "property change request" to the experiment.
+            expt.addPropertyChangeRequest (*pciter);
+            ++pciter;
+        }
+
+        string model_dir(cmdOptions.expt_path);
         stripUnixFile (model_dir);
         model_dir += "/";
 
         // Fixme: Get path from the expt above and use below:
         spineml::ModelPreflight model (model_dir, expt.modelUrl());
-        if (f.backup_model > 0) {
+        if (cmdOptions.backup_model > 0) {
             model.backup = true;
         }
         model.preflight();

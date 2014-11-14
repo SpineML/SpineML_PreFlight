@@ -30,6 +30,14 @@ namespace spineml
     class ModelPreflight
     {
     public:
+        /*!
+         * Construct a ModelPreflight object with the given directory
+         * and filename.
+         *
+         * @param fdir The directory containing model.xml
+         *
+         * @param fname The filename of the model xml file (probably model.xml)
+         */
         ModelPreflight(const std::string& fdir, const std::string& fname);
 
         /*!
@@ -45,11 +53,24 @@ namespace spineml
         void preflight (void);
 
         /*!
-         * Find a property called @propertyName in, for example, a
-         * Neuron population named @containerName. Return pointer to
-         * the node if found, null pointer if not. The container may
-         * be a neuron population or a projection - any object in the
-         * model which can contain a property.
+         * Find a property called @param propertyName in, for example,
+         * a Neuron population named @param containerName Return
+         * pointer to the node if found, null pointer if not. The
+         * container may be a neuron population or a projection - any
+         * object in the model which can contain a property.
+         *
+         * This is a recursive function.
+         *
+         * @param current_node The current node being searched.
+         *
+         * @param parentName The name attribute of the parent node of
+         * current_node.
+         *
+         * @param containerName The name attribute of the container of
+         * the property we're searching for.
+         *
+         * @param propertyName The name attribute of the property
+         * we're searching for.
          */
         rapidxml::xml_node<>* findProperty (rapidxml::xml_node<>* current_node,
                                             const std::string& parentName,
@@ -58,7 +79,7 @@ namespace spineml
 
         /*!
          * Backup the existing model.xml file, then overwrite it with
-         * the current content of this->doc.
+         * the current content of @see doc
          */
         void write (void);
 
@@ -67,17 +88,28 @@ namespace spineml
         /*!
          * Find the number of neurons in the destination population, starting
          * from the root node or the first population node (globals/members).
+         *
+         * @param dst_population The name attribute of the destination
+         * population.
          */
         int find_num_neurons (const std::string& dst_population);
 
         /*!
          * Take a population node, and process this for any changes we need to
          * make. Sub-calls preflight_projection.
+         *
+         * @param pop_node The node to preflight.
          */
         void preflight_population (rapidxml::xml_node<>* pop_node);
 
         /*!
          * Process the passed-in projection, making any changes necessary.
+         *
+         * @param proj_node The projection to preflight.
+         *
+         * @param src_name The source population.
+         *
+         * @param src_num The number of members in the source population.
          */
         void preflight_projection (rapidxml::xml_node<>* proj_node,
                                    const std::string& src_name, const std::string& src_num);
@@ -94,6 +126,7 @@ namespace spineml
          *
          * Here are the connection types encountered:
          *
+         * \verbatim
          * OneToOne - leave unmodified
          *  <LL:Synapse>
          *      <OneToOneConnection>
@@ -101,37 +134,52 @@ namespace spineml
          *              <FixedValue value="3"/>
          *          </Delay>
          *      </OneToOneConnection>
+         * \endverbatim
          *
          * AllToAll - leave unmodified
          *
+         * \verbatim
          *  <LL:Synapse>
          *      <AllToAllConnection>
          *          <Delay Dimension="ms">
          *              <FixedValue value="4"/>
          *          </Delay>
          *      </AllToAllConnection>
+         * \endverbatim
          *
          * FixedProbability - replace connectivity and delay with expl. list.
          *
+         * \verbatim
          *   <LL:Synapse>
          *      <FixedProbabilityConnection probability="0.01" seed="123">
          *          <Delay Dimension="ms">
          *              <NormalDistribution mean="0" variance="1" seed="123"/>
          *          </Delay>
          *      </FixedProbabilityConnection>
+         * \endverbatim
          *
          * Explicit list in XML - replace with explicit binary list:
          *
+         * \verbatim
          *  <LL:Synapse>
          *      <ConnectionList>
          *          <Connection src_neuron="1" dst_neuron="2" delay="4"/>
          *          <Connection src_neuron="1" dst_neuron="3" delay="5"/>
          *      </ConnectionList>
+         * \endverbatim
          *
          * Finally KernelConnection is deprecated and will be removed
          * in a future version of SpineCreator.
+         *
+         * @param syn_node The synapse to preflight.
+         *
+         * @param src_name The source population.
+         *
+         * @param src_num The number of members in the source population.
+         *
+         * @param dst_population The destination population for the synapse.
          */
-        void preflight_synapse (rapidxml::xml_node<>* proj_node,
+        void preflight_synapse (rapidxml::xml_node<>* syn_node,
                                 const std::string& src_name, const std::string& src_num,
                                 const std::string& dst_population);
 
@@ -140,14 +188,17 @@ namespace spineml
          * ConnectionList
          *
          * Go from this:
+         * \verbatim
          *          <LL:Synapse>
          *               <FixedProbabilityConnection probability="0.11" seed="123">
          *                   <Delay Dimension="ms">
          *                       <FixedValue value="0.2"/>
          *                   </Delay>
          *               </FixedProbabilityConnection>
+         * \endverbatim
          *
          * to this:
+         * \verbatim
          *          <LL:Synapse>
          *               <ConnectionList>
          *                   <BinaryFile file_name="connection0.bin" num_connections="87360"
@@ -156,11 +207,20 @@ namespace spineml
          *                       <FixedValue value="1"/>
          *                   </Delay>
          *               </ConnectionList>
+         * \endverbatim
          *
          * (an explicit list of connections, with distribution generated like the
          * code in SpineML_2_BRAHMS_CL_weight.xsl)
+         *
+         * @param fixedprob_node The FixedProbabilityConnection node to replace.
+         *
+         * @param src_name The source population.
+         *
+         * @param src_num The number of members in the source population.
+         *
+         * @param dst_population The destination population for the synapse.
          */
-        void replace_fixedprob_connection (rapidxml::xml_node<>* syn_node,
+        void replace_fixedprob_connection (rapidxml::xml_node<>* fixedprob_node,
                                            const std::string& src_name,
                                            const std::string& src_num,
                                            const std::string& dst_population);
@@ -170,6 +230,7 @@ namespace spineml
          * BinaryFile ConnectionList
          *
          * Go from this:
+         * \verbatim
          *          <LL:Synapse>
          *               <ConnectionList>
          *                   <Connection src_neuron="1" dst_neuron="2" delay="7"/>
@@ -177,13 +238,24 @@ namespace spineml
          *                   <Connection src_neuron="2" dst_neuron="4" delay="6"/>
          *                   <Connection src_neuron="2" dst_neuron="5" delay="7"/>
          *               </ConnectionList>
+         * \endverbatim
          *
          * to this:
+         * \verbatim
          *          <LL:Synapse>
          *               <ConnectionList>
          *                   <BinaryFile file_name="connection0.bin" num_connections="4"
          *                               explicit_delay_flag="1" packed_data="true"/>
          *               </ConnectionList>
+         * \endverbatim
+         *
+         * @param connlist_node The ConnectionList node to update.
+         *
+         * @param src_name The source population.
+         *
+         * @param src_num The number of members in the source population.
+         *
+         * @param dst_population The destination population for the synapse.
          */
         void connection_list_to_binary (rapidxml::xml_node<> *connlist_node,
                                         const std::string& src_name,
@@ -192,13 +264,16 @@ namespace spineml
 
         /*!
          * Configure connection delays in @param cl using the delays specified in
-         * parent_node.
+         * @param parent_node.
          */
         void setup_connection_delays (rapidxml::xml_node<> *parent_node,
                                       spineml::ConnectionList& cl);
 
         /*!
-         * Write out the pf_connectionN.bin file out.
+         * Write out the pf_connectionN.bin file out. The @param
+         * parent_node is used for the destination in the XML to
+         * write, The @param cl contains the @see ConnectionList#write
+         * method.
          */
         void write_connection_out (rapidxml::xml_node<> *parent_node,
                                    spineml::ConnectionList& cl);
@@ -208,28 +283,41 @@ namespace spineml
          * property with an explicit binary file. For example, if it's
          * a fixed value property replace this:
          *
+         * \verbatim
          * <Property name="m" dimension="?">
          *   <FixedValue value="1"/>
          * </Property>
+         * \endverbatim
          *
          * with something like this:
          *
+         * \verbatim
          * <Property name="m" dimension="?">
          *   <ValueList>
          *     <BinaryFile file_name="pf_explicitDataBinaryFile5.bin" num_elements="2500"/>
          *   </ValueList>
          * </Property>
+         * \endverbatim
          *
          * As well as writing out the data file.
          *
          * Note that we have to look in the component xml to see if
          * the property is a state variable (which we should
          * preflight) or a parameter (which we shouldn't).
+         *
+         * @param prop_node The property within which the (e.g.)
+         * FixedValue will be replaced.
+         *
+         * @param pop_size the number of members in the parent
+         * population (this goes in the num_elements attrbute of the
+         * BinaryFile node).
          */
         void replace_statevar_property (rapidxml::xml_node<>* prop_node, unsigned int pop_size);
 
         /*!
          * Generate the next file path for an explicit data file.
+         *
+         * @return explicit binary data file path.
          */
         std::string nextExplicitDataPath (void);
 

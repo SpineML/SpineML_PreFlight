@@ -68,9 +68,9 @@ namespace spineml
          * command line. If the request has a bad format, throw an exception.
          *
          * This method splits up the single command line option passed
-         * as @pcrequest. It then checks in the model.xml to ensure
+         * as @param pcrequest  It then checks in the model.xml to ensure
          * that the requested property exists. If this turns out to be
-         * the case, it then calls this->insertModelConfig to add the
+         * the case, it then calls @see insertModelConfig to add the
          * property change/model configuration update.
          */
         void addPropertyChangeRequest (const std::string& pcrequest);
@@ -89,7 +89,8 @@ namespace spineml
         void setModelDir (const std::string& dir);
 
     private:
-        //! write thedoc out to file.
+        //! write The XML document provided in @param the_doc out to
+        //! file.
         void write (const rapidxml::xml_document<>& the_doc);
 
         //! Path to the experiment xml file.

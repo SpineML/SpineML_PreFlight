@@ -22,17 +22,27 @@ namespace spineml
      */
     class AllocAndRead {
     public:
+        /*!
+         * Construct an empty AllocAndRead object.
+         */
         AllocAndRead ()
             : filepath ("")
             , data_((char*)0)
         {
         }
+        /*!
+         * Construct an AllocAndRead object and read the content of
+         * the file at @param path
+         */
         AllocAndRead (const std::string& path)
             : filepath (path)
             , data_((char*)0)
         {
             this->read();
         }
+        /*!
+         * Destructor needs to free up @see data_.
+         */
         ~AllocAndRead ()
         {
             if (this->data_) {
@@ -41,7 +51,7 @@ namespace spineml
         }
 
         /*!
-         * A copy constructor - we have to make a copy of this->data_
+         * A copy constructor - we have to make a copy of @see data_
          */
         AllocAndRead (const AllocAndRead& other)
         {
@@ -57,6 +67,11 @@ namespace spineml
             // no need to null-terminate as we used calloc.
         }
 
+        /*!
+         * Obtain an indexed character from @see data_.
+         * @param i index into @see data_.
+         * @return the character at data_[i].
+         */
         char datachar (size_t i) const
         {
             char c = this->data_[i];
@@ -64,20 +79,27 @@ namespace spineml
         }
 
         /*!
-         * Get a pointer to the data.
+         * Get a pointer to @see data_.
+         * @return @see data_
          */
         char* data (void)
         {
             return this->data_;
         }
 
+        /*!
+         * Get the size of @see data_. This is stored in the member
+         * @see sz.
+         * @return @see sz.
+         */
         size_t getsize (void) const
         {
             return this->sz;
         }
 
         /*!
-         * Public version of read.
+         * Reads the file at @param path into @see data_. Allocates
+         * memory as required.
          */
         void read (const std::string& path)
         {

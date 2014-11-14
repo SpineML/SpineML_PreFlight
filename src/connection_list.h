@@ -97,17 +97,20 @@ namespace spineml
          * project's model.xml). The @param into_node is emptied and
          * replaced. into_node might look like:
          *
+         * \verbatim
          * <FixedProbabilityConnection probability="0.11" seed="123">
          *   <Delay Dimension="ms">
          *     <FixedValue value="0.2"/>
          *   </Delay>
          * </FixedProbabilityConnection>
+         * \endverbatim
          *
          * It's called into_node because we're copying the
          * ConnectionList INTO that node.
          *
          * Here's an example of the output XML:
          *
+         * \verbatim
          * <LL:Projection dst_population="Retina_1">
          *   <LL:Synapse>
          *     <ConnectionList>
@@ -121,9 +124,12 @@ namespace spineml
          *     <LL:PostSynapse/>
          *   </LL:Synapse>
          * </LL:Projection>
+         * \endverbatim
          *
          * The binary part of the connection list is written into
-         * @param binary_path.
+         * @param binary_file_name
+         *
+         * @param model_root The directory path for the model's XML files.
          *
          * NB: This only writes out the source to destination
          * connections (connectivityS2C/connectivityC2D).
@@ -223,6 +229,7 @@ namespace spineml
          * The delay can have a uniform distribution, fixed value or
          * normal distribution:
          *
+         * \verbatim
          * <Delay Dimension="ms">
          *   <UniformDistribution minimum="0.1" maximum="1.1" seed="123"/>
          * </Delay>
@@ -234,6 +241,7 @@ namespace spineml
          * <Delay Dimension="ms">
          *   <NormalDistribution mean="0.2" variance="1" seed="123"/>
          * </Delay>
+         * \endverbatim
          *
          */
         Distribution delayDistributionType;

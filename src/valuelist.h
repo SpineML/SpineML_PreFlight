@@ -18,18 +18,24 @@ namespace spineml
     /*!
      * A class to represent a Valuelist element, such as this one:
      *
+     * \verbatim
      * <Property name="m" dimension="?">
      *   <Valuelist>
      *     <Value />
      *     <Value />
      *   </ValueList>
      * </Property>
+     * \endverbatim
      */
     class ValueList : public PropertyContent
     {
     public:
-        ValueList(rapidxml::xml_node<>* ud_node, const unsigned int num_in_pop);
-        ~ValueList() {}
+        /*!
+         * Construct a new ValueList using the XML at @param
+         * vl_node and the number in the population given by @param
+         * num_in_pop
+         */
+        ValueList(rapidxml::xml_node<>* vl_node, const unsigned int num_in_pop);
 
     protected:
         /*!

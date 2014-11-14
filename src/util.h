@@ -20,15 +20,15 @@ namespace spineml
     public:
 
         /*!
-         * Remove the file from a path. Modifies @unixPath. If
+         * Remove the file from a path. Modifies @param unixPath  If
          * unixPath is "/path/to/some/file.txt" before calling, then
          * afterwards, it will be "/path/to/some"
          */
         static void stripUnixFile (std::string& unixPath);
 
         /*!
-         * A little utility. Given a unixPath containing "blah.xml",
-         * change unixPath to "blah".
+         * A little utility. Given a @param unixPath containing
+         * "blah.xml", change unixPath to "blah".
          */
         static void stripFileSuffix (std::string& unixPath);
 
@@ -52,7 +52,7 @@ namespace spineml
          * \param enclosureChars The characters used to
          * enclose a multi-word token ("\"\'")
          *
-         * \param the escape character. If not set to \0, then
+         * \param escapeChar the escape character. If not set to \0, then
          * this is the character used to escape the enclosure
          * chars.
          */
@@ -64,8 +64,12 @@ namespace spineml
                                                          const typename strType::value_type& escapeChar = typename strType::value_type(0));
         //@}
 
-        //! Given a @str like "25.3ms", place 25.3 in pair->first and
-        //! "ms" in pair->second and return the pair.
+        /*!
+         * Given a @param str like "25.3ms", place 25.3 in pair->first
+         * and "ms" in pair->second and return the pair.
+         *
+         * @return a pair containing double value and dimension string.
+         */
         static std::pair<double, std::string> getValueWithDimension (const std::string& str);
 
     }; // utility class

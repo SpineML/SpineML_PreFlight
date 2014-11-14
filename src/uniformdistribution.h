@@ -17,15 +17,21 @@ namespace spineml
     /*!
      * A class to represent a UniformDistribution element, such as this one:
      *
+     * \verbatim
      * <Property name="m" dimension="?">
      *   <Uniformdistribution minimum="1.1" maximum="1.4" seed="123"/>
      * </Property>
+     * \endverbatim
      */
     class UniformDistribution : public PropertyContent
     {
     public:
+        /*!
+         * Construct a new UniformDistribution using the XML at @param
+         * ud_node and the number in the population given by @param
+         * num_in_pop
+         */
         UniformDistribution(rapidxml::xml_node<>* ud_node, const unsigned int num_in_pop);
-        ~UniformDistribution() {}
 
     protected:
         /*!

@@ -17,15 +17,21 @@ namespace spineml
     /*!
      * A class to represent a NormalDistribution element, such as this one:
      *
+     * \verbatim
      * <Property name="m" dimension="?">
      *   <Normaldistribution mean="1.1" variance="1.4" seed="123"/>
      * </Property>
+     * \endverbatim
      */
     class NormalDistribution : public PropertyContent
     {
     public:
-        NormalDistribution(rapidxml::xml_node<>* ud_node, const unsigned int num_in_pop);
-        ~NormalDistribution() {}
+        /*!
+         * Construct a new NormalDistribution using the XML at @param
+         * nd_node and the number in the population given by @param
+         * num_in_pop
+         */
+        NormalDistribution(rapidxml::xml_node<>* nd_node, const unsigned int num_in_pop);
 
     protected:
         /*!

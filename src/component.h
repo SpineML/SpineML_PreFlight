@@ -22,20 +22,23 @@ namespace spineml
     {
     public:
         /*!
-         * Constructor takes a directory path @d and a component name
-         * @n. The component XML file is expected to be called @n.xml
-         * and found in @d.
+         * Constructor takes a directory path @param d and a component name
+         * @param n  The component XML file is expected to be called n.xml
+         * and found in @param d
          */
         Component(const std::string& d, const std::string& n);
 
         /*!
-         * Output a comma separated list of the state variable names.
+         * Output a comma separated list of the state variable
+         * names. @see stateVariables
+         *
+         * @return a comma separated list of the state variable names.
          */
         std::string listStateVariables (void);
 
         /*!
-         * Return true if this component contains the passed in state
-         * variable name.
+         * @return true if this component contains the passed in state
+         * variable name @param sv
          */
         bool containsStateVariable (const std::string& sv);
 
@@ -43,18 +46,18 @@ namespace spineml
 
         /*!
          * Read the component data from the file, assumed to be in
-         * ./@name.xml
+         * "name".xml (@see name)
          */
         void read (void);
 
         /*!
-         * If the ComponentClass node hasn't be found and stored in
-         * this->class_node, then do so.
+         * If the ComponentClass node hasn't been found and stored in
+         * @see class_node, then do so.
          */
         void getClassNode (void);
 
         /*!
-         * Read this->type and verify this->name from xml.
+         * Read @see type and verify @see name from xml.
          */
         void readNameAndType (void);
 
@@ -64,8 +67,8 @@ namespace spineml
         void readStateVariables (void);
 
         /*!
-         * Read the single state variable pointed to by sv_node and
-         * add it to this->stateVariables.
+         * Read the single state variable pointed to by @param sv_node and
+         * add it to @see stateVariables.
          */
         void readStateVariable (const rapidxml::xml_node<>* sv_node);
 

@@ -22,6 +22,9 @@ dnl We don't ever use static versions of the components so disable static:
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
+dnl check for doxygen
+AC_CHECK_PROG(DOXYGEN, doxygen, doxygen, /bin/echo)
+
 dnl check for libs
 dnl AC_CHECK_LIB([futil], [main])
 
@@ -144,6 +147,8 @@ dnl List the Makefiles to output
 AC_CONFIG_FILES([
 Makefile
 src/Makefile
+doc/Makefile
+doc/Doxyfile
 ])
 
 AC_OUTPUT

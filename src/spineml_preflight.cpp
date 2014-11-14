@@ -129,7 +129,12 @@ int main (int argc, char * argv[])
                                  "with the -e option.");
         }
 
+        string model_dir(cmdOptions.expt_path);
+        stripUnixFile (model_dir);
+        model_dir += "/";
+
         spineml::Experiment expt (cmdOptions.expt_path);
+        expt.setModelDir (model_dir);
 
         vector<string>::const_iterator pciter = cmdOptions.property_changes.begin();
         while (pciter != cmdOptions.property_changes.end()) {
@@ -137,10 +142,6 @@ int main (int argc, char * argv[])
             expt.addPropertyChangeRequest (*pciter);
             ++pciter;
         }
-
-        string model_dir(cmdOptions.expt_path);
-        stripUnixFile (model_dir);
-        model_dir += "/";
 
         // Fixme: Get path from the expt above and use below:
         spineml::ModelPreflight model (model_dir, expt.modelUrl());

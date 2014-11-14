@@ -21,6 +21,12 @@ PropertyContent::PropertyContent(xml_node<>* fv_node, const unsigned int num_in_
 {
 }
 
+PropertyContent::PropertyContent()
+    : alreadyBinary (false)
+    , numInPopulation (0)
+{
+}
+
 bool
 PropertyContent::writeAsBinaryValueList (rapidxml::xml_node<>* into_node,
                                          const std::string& model_root,
@@ -81,4 +87,44 @@ PropertyContent::writeVLXml (rapidxml::xml_node<>* into_node,
     binfile_node->append_attribute (num_elem_attr);
 
     into_node->prepend_node (binfile_node);
+}
+
+void
+PropertyContent::writeULProperty (rapidxml::xml_document<>* the_doc,
+                                  rapidxml::xml_node<>* into_node)
+{
+    // Remove any attributes and child nodes from into_node.
+    into_node->remove_all_attributes();
+    into_node->remove_all_nodes();
+    into_node->name("UL:Property");
+
+    // Add Property name and dimension here.
+    char* name_alloced = the_doc->allocate_string (this->propertyName.c_str());
+    xml_attribute<>* name_attr = the_doc->allocate_attribute ("name", name_alloced);
+    char* dim_alloced = the_doc->allocate_string (this->propertyDim.c_str());
+    xml_attribute<>* dim_attr = the_doc->allocate_attribute ("dimension", dim_alloced);
+    into_node->append_attribute (name_attr);
+    into_node->append_attribute (dim_attr);
+
+    cout << "About to call writeULPropertyValue\n";
+    this->writeULPropertyValue (the_doc, into_node);
+}
+
+void
+PropertyContent::writeULPropertyValue (rapidxml::xml_document<>* the_doc,
+                                       rapidxml::xml_node<>* into_node)
+{
+    throw runtime_error ("Implement this in derived class.");
+}
+
+void
+PropertyContent::setPropertyName (const string& name)
+{
+    this->propertyName = name;
+}
+
+void
+PropertyContent::setPropertyDim (const string& dim)
+{
+    this->propertyDim = dim;
 }

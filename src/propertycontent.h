@@ -20,12 +20,19 @@ namespace spineml
      * <Property name="m" dimension="?">
      *   <!-- some sort of content element here -->
      * </Property>
+     *
+     * This class and its children can also be used to generate
+     * property change elements like this:
+     *
+     * <UL:Property name="m" dimension="?">
+     *   <!-- content element here -->
+     * </UL:Property>
      */
     class PropertyContent
     {
     public:
         PropertyContent(rapidxml::xml_node<>* content_node, const unsigned int num_in_pop);
-        ~PropertyContent() {}
+        PropertyContent();
 
         /*!
          * Writes out this PropertyContent as a ValueList, with explicit
@@ -39,6 +46,16 @@ namespace spineml
         bool writeAsBinaryValueList (rapidxml::xml_node<>* into_node,
                                      const std::string& model_root,
                                      const std::string& binary_file_name);
+
+        void setPropertyName (const std::string& name);
+
+        void setPropertyDim (const std::string& dim);
+
+        /*!
+         * Populate <UL:Property> element with this <FixedValue>
+         */
+        void writeULProperty (rapidxml::xml_document<>* the_doc,
+                              rapidxml::xml_node<>* into_node);
 
     protected:
         /*!
@@ -62,9 +79,19 @@ namespace spineml
                          const std::string& binary_file_name);
 
         /*!
+         * The content-specific write property value thing.
+         */
+        virtual void writeULPropertyValue (rapidxml::xml_document<>* the_doc,
+                                           rapidxml::xml_node<>* into_node);
+
+        /*!
          * Set to true if this Property is already a binary ValueList.
          */
         bool alreadyBinary;
+
+        std::string propertyName;
+
+        std::string propertyDim;
 
     public:
         /*!

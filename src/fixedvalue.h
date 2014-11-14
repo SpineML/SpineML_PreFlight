@@ -25,10 +25,14 @@ namespace spineml
     {
     public:
         FixedValue(rapidxml::xml_node<>* fv_node, const unsigned int num_in_pop);
-        ~FixedValue() {}
+        FixedValue();
+
+        void setValue (const double& v);
 
     protected:
         void writeVLBinaryData (std::ostream& f);
+        void writeULPropertyValue (rapidxml::xml_document<>* the_doc,
+                                   rapidxml::xml_node<>* into_node);
 
     public:
         /*!

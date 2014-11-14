@@ -34,11 +34,28 @@ namespace spineml
         ~ModelPreflight();
 
         /*!
+         * Some initialisation - parse the doc and find the root node.
+         */
+        void init (void);
+
+        /*!
          * Start the work. Begin searching for Population nodes and
          * then search within each Population for anything we need to
          * modify in this preflight process.
          */
         void preflight (void);
+
+        /*!
+         * Find a property called @propertyName in, for example, a
+         * Neuron population named @containerName. Return pointer to
+         * the node if found, null pointer if not. The container may
+         * be a neuron population or a projection - any object in the
+         * model which can contain a property.
+         */
+        rapidxml::xml_node<>* findProperty (rapidxml::xml_node<>* current_node,
+                                            const std::string& parentName,
+                                            const std::string& containerName,
+                                            const std::string& propertyName);
 
         /*!
          * Backup the existing model.xml file, then overwrite it with
@@ -47,6 +64,7 @@ namespace spineml
         void write (void);
 
     private:
+
         /*!
          * Find the number of neurons in the destination population, starting
          * from the root node or the first population node (globals/members).

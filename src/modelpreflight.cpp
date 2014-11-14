@@ -65,25 +65,35 @@ ModelPreflight::write (void)
 }
 
 void
+ModelPreflight::init (void)
+{
+    if (!this->root_node) {
+        cout << "init\n";
+        // we are choosing to parse the XML declaration
+        // parse_no_data_nodes prevents RapidXML from using the somewhat
+        // surprising behaviour of having both values and data nodes, and
+        // having data nodes take precedence over values when printing
+        // >>> note that this will skip parsing of CDATA nodes <<<
+        this->doc.parse<parse_declaration_node | parse_no_data_nodes>(this->modeldata.data());
+
+        // Get the root node.
+        this->root_node = this->doc.first_node (LVL"SpineML");
+        if (!this->root_node) {
+            // Possibly look for HL:SpineML, if we have a high level model (not
+            // used by anyone at present).
+            stringstream ee;
+            ee << "No root node " << LVL << "SpineML!";
+            throw runtime_error (ee.str());
+        }
+    } else {
+        cout << "NO init\n";
+    }
+}
+
+void
 ModelPreflight::preflight (void)
 {
-    // we are choosing to parse the XML declaration
-    // parse_no_data_nodes prevents RapidXML from using the somewhat
-    // surprising behaviour of having both values and data nodes, and
-    // having data nodes take precedence over values when printing
-    // >>> note that this will skip parsing of CDATA nodes <<<
-    this->doc.parse<parse_declaration_node | parse_no_data_nodes>(this->modeldata.data());
-
-    // Get the root node.
-    this->root_node = this->doc.first_node (LVL"SpineML");
-    if (!this->root_node) {
-        // Possibly look for HL:SpineML, if we have a high level model (not
-        // used by anyone at present).
-        stringstream ee;
-        ee << "No root node " << LVL << "SpineML!";
-        throw runtime_error (ee.str());
-    }
-
+    this->init();
     // Search each population for stuff.
     for (this->first_pop_node = this->root_node->first_node(LVL"Population");
          this->first_pop_node;
@@ -540,4 +550,65 @@ ModelPreflight::write_connection_out (xml_node<>* parent_node, ConnectionList& c
     binfilepath += numss.str();
     binfilepath += ".bin";
     cl.write (parent_node, this->modeldir, binfilepath);
+}
+
+#define STRLEN_PROPERTY 8
+xml_node<>*
+ModelPreflight::findProperty (xml_node<>* current_node,
+                              const std::string& parentName,
+                              const std::string& containerName,
+                              const std::string& propertyName)
+{
+    cout << __FUNCTION__ <<  "Called\n";
+
+    xml_node<>* rtn = static_cast<xml_node<>*>(0);
+
+    if (current_node == rtn /* i.e. static_cast<xml_node<>*>(0) */) {
+        current_node = this->root_node;
+    }
+
+    // 1. Is current_node a Property?
+    string cname = current_node->name();
+
+    xml_attribute<>* nattr = current_node->first_attribute ("name");
+    string pname("");
+    if (nattr) {
+        pname = nattr->value();
+    }
+
+    if (current_node->name_size() == STRLEN_PROPERTY && cname == "Property") {
+        cout << "This is a property!\n";
+        // Does the name of the parent match?
+        if (parentName == containerName) {
+            // Yes, matches. does name attribute of this Property match propertyName?q
+            if (!nattr) {
+                // no match, we don't have a property name attribute.
+            } else {
+                if (pname == propertyName) {
+                    // Match!
+                    rtn = current_node;
+                } else {
+                    // No match, wrong property name
+                }
+            }
+        } else {
+            // This is a Property, but it has the wrong parent container.
+            cout << "parentName: " << parentName << " != containerName: " <<  containerName << endl;
+        }
+
+    } else {
+        // Not a property, so search down then sideways
+        xml_node<>* next_node;
+        for (next_node = current_node->first_node();
+             next_node;
+             next_node = next_node->next_sibling()) {
+
+            if ((rtn = this->findProperty (next_node, pname, containerName, propertyName)) != static_cast<xml_node<>*>(0)) {
+                // next_node was a property of interest!
+                break;
+            }
+        }
+    }
+
+    return rtn;
 }

@@ -21,20 +21,14 @@
 #include <string>
 #include "experiment.h"
 #include "modelpreflight.h"
+#include "util.h"
 
 extern "C" {
 #include <popt.h>
 }
 
 using namespace std;
-
-void stripUnixFile (std::string& unixPath)
-{
-    string::size_type pos (unixPath.find_last_of ('/'));
-    if (pos != string::npos) {
-        unixPath = unixPath.substr (0, pos);
-    }
-}
+using spineml::Util;
 
 /*
  * libpopt features - the features that are available to change on the
@@ -130,7 +124,7 @@ int main (int argc, char * argv[])
         }
 
         string model_dir(cmdOptions.expt_path);
-        stripUnixFile (model_dir);
+        Util::stripUnixFile (model_dir);
         model_dir += "/";
 
         spineml::Experiment expt (cmdOptions.expt_path);

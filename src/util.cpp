@@ -11,6 +11,28 @@
 using namespace std;
 using namespace spineml;
 
+void
+Util::stripUnixFile (std::string& unixPath)
+{
+    string::size_type pos (unixPath.find_last_of ('/'));
+    if (pos != string::npos) {
+        unixPath = unixPath.substr (0, pos);
+    }
+}
+
+void
+Util::stripFileSuffix (string& unixPath)
+{
+        string::size_type pos (unixPath.rfind('.'));
+        if (pos != string::npos) {
+                // We have a '.' character
+                string tmp (unixPath.substr (0, pos));
+                if (!tmp.empty()) {
+                        unixPath = tmp;
+                }
+        }
+}
+
 int
 Util::stripChars (std::string& input, const std::string& charList)
 {

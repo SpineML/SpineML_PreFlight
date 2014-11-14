@@ -2,6 +2,9 @@
  * A utility class.
  */
 
+#ifndef _UTIL_H_
+#define _UTIL_H_
+
 #include <string>
 #include <vector>
 #include <utility>
@@ -15,6 +18,19 @@ namespace spineml
     class Util
     {
     public:
+
+        /*!
+         * Remove the file from a path. Modifies @unixPath. If
+         * unixPath is "/path/to/some/file.txt" before calling, then
+         * afterwards, it will be "/path/to/some"
+         */
+        static void stripUnixFile (std::string& unixPath);
+
+        /*!
+         * A little utility. Given a unixPath containing "blah.xml",
+         * change unixPath to "blah".
+         */
+        static void stripFileSuffix (std::string& unixPath);
 
         /*!
          * Strip any occurrences of the characters in charList from
@@ -194,3 +210,5 @@ spineml::Util::splitStringWithEncs (const strType& s,
     return theVec;
 }
 //@}
+
+#endif // _UTIL_H_

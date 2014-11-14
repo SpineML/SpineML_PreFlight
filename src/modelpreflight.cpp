@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include "rapidxml_print.hpp"
 #include "rapidxml.hpp"
+#include "util.h"
 #include "modelpreflight.h"
 #include "connection_list.h"
 #include "fixedvalue.h"
@@ -34,10 +35,6 @@ ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname
     string filepath = this->modeldir + this->modelfile;
     cout << "Preflight: Model filepath: " << filepath << endl;
     this->modeldata.read (filepath);
-}
-
-ModelPreflight::~ModelPreflight()
-{
 }
 
 void
@@ -137,19 +134,6 @@ ModelPreflight::find_num_neurons (const string& dst_population)
 }
 
 void
-ModelPreflight::stripFileSuffix (string& unixPath)
-{
-        string::size_type pos (unixPath.rfind('.'));
-        if (pos != string::npos) {
-                // We have a '.' character
-                string tmp (unixPath.substr (0, pos));
-                if (!tmp.empty()) {
-                        unixPath = tmp;
-                }
-        }
-}
-
-void
 ModelPreflight::preflight_population (xml_node<>* pop_node)
 {
     // Within each population: Find the "population name"; this is
@@ -179,7 +163,7 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
     if ((cname_attr = neuron_node->first_attribute ("url"))) {
         c_name = cname_attr->value();
     }
-    this->stripFileSuffix (c_name);
+    Util::stripFileSuffix (c_name);
 
     if (c_name.empty()) {
         stringstream ee;

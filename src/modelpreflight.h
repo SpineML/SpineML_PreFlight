@@ -31,7 +31,6 @@ namespace spineml
     {
     public:
         ModelPreflight(const std::string& fdir, const std::string& fname);
-        ~ModelPreflight();
 
         /*!
          * Some initialisation - parse the doc and find the root node.
@@ -233,12 +232,6 @@ namespace spineml
          * Generate the next file path for an explicit data file.
          */
         std::string nextExplicitDataPath (void);
-
-        /*!
-         * A little utility. Given a unixPath containing "blah.xml",
-         * change unixPath to "blah".
-         */
-        void stripFileSuffix (std::string& unixPath);
 
     private:
         /*!

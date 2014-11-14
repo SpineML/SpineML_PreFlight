@@ -138,8 +138,8 @@ ConnectionList::generateNormalDelays (void)
     for (unsigned int i = 0; i < this->connectivityC2Delay.size(); ++i) {
 
         // NB: delayVariance and delayMean HAVE to be in
-        // milliseconds. That means I need to change these so they're
-        // always stored here in ms. FIXME.
+        // milliseconds. this->delayVariance and this->delayMean are
+        // assumed to have dimension ms.
         this->connectivityC2Delay[i] = (RNOR(&rngData) * this->delayVariance + this->delayMean);
 
         if (this->connectivityC2Delay[i] < 0) {

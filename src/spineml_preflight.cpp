@@ -137,7 +137,7 @@ int main (int argc, char * argv[])
             ++pciter;
         }
 
-        // Fixme: Get path from the expt above and use below:
+        // Get path from the expt above
         spineml::ModelPreflight model (model_dir, expt.modelUrl());
         if (cmdOptions.backup_model > 0) {
             model.backup = true;

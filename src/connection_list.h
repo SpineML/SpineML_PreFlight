@@ -241,13 +241,13 @@ namespace spineml
         /*!
          * The connection delay IF the delay is a fixed scalar. If
          * there is a connection-dependent delay, that goes in the
-         * connection lists. I think. Dimensions: ms.
+         * connection lists. I think. Dimension: ms.
          */
         float delayFixedValue;
 
         /*!
          * If the delay is a normal distribution, it has a mean and
-         * variance. Dimensions: ms.
+         * variance. Dimension: ms.
          */
         //@{
         float delayMean;

@@ -162,7 +162,7 @@ spineml::Util::splitStringWithEncs (const strType& s,
             //DBG2 ("Searching for next instances of enc chars: >" << enclosureChars << "< ");
             c = a;
             while ((b = s.find_first_of (currentEncChar, c)) != strType::npos) {
-                // FIXME: Check we didn't find an escaped enclosureChar.
+                // Check we didn't find an escaped enclosureChar.
                 if (escapeChar) {
                     c = b; --c;
                     if (s[c] == escapeChar) {

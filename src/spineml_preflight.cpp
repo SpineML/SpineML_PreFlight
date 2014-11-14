@@ -1,19 +1,36 @@
 /*
- * This program parses the SpineML model, updating any aspects of the
- * model where parameters, weights or connectivity are specified in
- * meta-form. For example, where connections are given in kernel form,
- * this program creates a connection list file and modifies the
- * <KernelConnection> xml element into a <ConnectionList> element with
- * an associated binary connection list file.
- *
- * The original model.xml file is renamed model_orig.xml and a new
- * model.xml file is written out containing the new, specific
- * information.
- *
- * The dependency-free rapidxml header-only xml parser is used to
- * read, modify and write out model.xml.
+ * spineml_preflight main() function
  *
  * Author: Seb James, 2014.
+ */
+
+/*!
+ * \mainpage SpineML_PreFlight
+ *
+ * \section intro_sec Introduction
+ *
+ * This program parses the SpineML model, updating any aspects of the
+ * model where parameters, weights or connectivity are specified in
+ * meta-form. For example, where connections are given in fixed
+ * probability form, this program creates a connection list file and
+ * modifies the \verbatim<FixedProbabilityConnection>\endverbatim xml
+ * element into a \verbatim<ConnectionList>\endverbatim element with
+ * an associated binary connection list file.
+ *
+ * It also replaces those \verbatim<Property>\endverbatim elements
+ * which are state variable initial values with binary connection
+ * lists.
+ *
+ * The original model.xml file is optonally renamed model.xml.bu and a
+ * new model.xml file is written out containing the new, specific
+ * information.
+ *
+ * If the user requests "property changes" via the command line, then
+ * this program also modified the experiment.xml file, adding model
+ * configuration changes there.
+ *
+ * The dependency-free rapidxml header-only xml parser is used to
+ * read, modify and write out XML files.
  */
 
 #include <exception>
@@ -30,17 +47,24 @@ extern "C" {
 using namespace std;
 using spineml::Util;
 
-/*
+/*!
  * libpopt features - the features that are available to change on the
  * command line.
  */
 struct CmdOptions {
-    char * expt_path; // -e option
-    int backup_model; // -b option
-    char * property_change; // Used temporarily by the prop. change option
-    vector<string> property_changes; // A record of all property changes
+    //! To hold the path to the experiment.xml file. The -e option.
+    char * expt_path;
+    //! To hold a flag to say whether the model.xml file should be backed up before being modified. The -b option.
+    int backup_model;
+    //! To hold the current property change option string. Used temporarily by the property change option (-p).
+    char * property_change;
+    //! To hold a list of all property changes requested by the user
+    vector<string> property_changes;
 };
 
+/*!
+ * Initializes a CmdOptions object via a @param copts pointer
+ */
 void zeroCmdOptions (CmdOptions* copts)
 {
     copts->expt_path = NULL;
@@ -50,11 +74,12 @@ void zeroCmdOptions (CmdOptions* copts)
 }
 
 /*
- * Lazily make CmdOptions global; allows callback to access this easily.
+ * Lazily make CmdOptions global; allows callback to access this
+ * easily.
  */
 struct CmdOptions cmdOptions;
 
-/*
+/*!
  * This callback is used when there's a -p option, to allow my to
  * collect multiple property change directives from the user.
  *
@@ -81,6 +106,9 @@ void property_change_callback (poptContext con,
     }
 }
 
+/*!
+ * main entry point for spineml_preflight
+ */
 int main (int argc, char * argv[])
 {
     int rtn = 0;

@@ -75,10 +75,9 @@ namespace spineml
     }; // utility class
 } // namespace
 
-/*!
+/*
  * Templated function splitStringWithEncs implementation.
  */
-//@{
 template <typename strType>
 std::vector<strType>
 spineml::Util::splitStringWithEncs (const strType& s,
@@ -213,6 +212,5 @@ spineml::Util::splitStringWithEncs (const strType& s,
 
     return theVec;
 }
-//@}
 
 #endif // _UTIL_H_

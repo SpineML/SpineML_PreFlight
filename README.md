@@ -3,6 +3,30 @@ SpineML_PreFlight
 
 Simulator independent initial processing for SpineML models.
 
-This code takes a SpineML model, probably created in SpineCreator, and "preflights" it ready for the simulator.
+This code takes a SpineML model, probably created in SpineCreator, and
+"preflights" it ready for the simulator.
 
-At present, it replaces any FixedProbability connections with explicit connection lists, to "fix" the model, prior to execution. It modifies the model.xml file accordingly and creates new pp_connectionN.bin files.
+The program parses the SpineML model, updating any aspects of the
+model where parameters, weights or connectivity are specified in
+meta-form. For example, where connections are given in fixed
+probability form, this program creates a connection list file and
+modifies the <FixedProbabilityConnection> xml element into a
+<ConnectionList> element with an associated
+binary connection list file.
+ 
+It also replaces those <Property> elements which are state variable
+initial values with binary connection lists.
+ 
+The original model.xml file is optionally renamed model.xml.bu and a
+new model.xml file is written out containing the new, specific
+information.
+ 
+If the user requests "property changes" via the command line, then
+this program also modified the experiment.xml file, adding model
+configuration changes there.
+ 
+The dependency-free rapidxml header-only xml parser is used to read,
+modify and write out XML files.
+
+Author: Seb James
+Licence: GNU GPL

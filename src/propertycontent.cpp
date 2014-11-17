@@ -106,7 +106,6 @@ PropertyContent::writeULProperty (rapidxml::xml_document<>* the_doc,
     into_node->append_attribute (name_attr);
     into_node->append_attribute (dim_attr);
 
-    cout << "About to call writeULPropertyValue\n";
     this->writeULPropertyValue (the_doc, into_node);
 }
 

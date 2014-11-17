@@ -140,7 +140,6 @@ Experiment::write (const xml_document<>& the_doc)
 
     // Write experiment.xml:
     ofstream f;
-    cout << "Opening " << this->filepath << "\n";
     f.open (this->filepath.c_str(), ios::out|ios::trunc);
     if (!f.is_open()) {
         stringstream ee;
@@ -175,8 +174,8 @@ Experiment::addPropertyChangeRequest (const string& pcrequest)
         throw runtime_error (ee.str());
     }
 
-    cout << "Property change request: Override property '" << elements[1]
-         << "' in target '" << elements[0] << "' with value '" << elements[2] << "'\n";
+    cout << "Preflight: Property change request: '" << elements[0]
+         << "'->'" << elements[1] << "' becomes '" << elements[2] << "'\n";
 
     // We have the elements, we now need to search model.xml to make
     // sure these exist.

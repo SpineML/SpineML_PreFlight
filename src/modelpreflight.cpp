@@ -33,7 +33,6 @@ ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname
     this->modeldir = fdir;
     this->modelfile = fname;
     string filepath = this->modeldir + this->modelfile;
-    cout << "Preflight: Model filepath: " << filepath << endl;
     this->modeldata.read (filepath);
 }
 
@@ -65,7 +64,6 @@ void
 ModelPreflight::init (void)
 {
     if (!this->root_node) {
-        cout << "init\n";
         // we are choosing to parse the XML declaration
         // parse_no_data_nodes prevents RapidXML from using the somewhat
         // surprising behaviour of having both values and data nodes, and
@@ -82,8 +80,6 @@ ModelPreflight::init (void)
             ee << "No root node " << LVL << "SpineML!";
             throw runtime_error (ee.str());
         }
-    } else {
-        cout << "NO init\n";
     }
 }
 
@@ -543,8 +539,6 @@ ModelPreflight::findProperty (xml_node<>* current_node,
                               const std::string& containerName,
                               const std::string& propertyName)
 {
-    cout << __FUNCTION__ <<  "Called\n";
-
     xml_node<>* rtn = static_cast<xml_node<>*>(0);
 
     if (current_node == rtn /* i.e. static_cast<xml_node<>*>(0) */) {
@@ -561,8 +555,7 @@ ModelPreflight::findProperty (xml_node<>* current_node,
     }
 
     if (current_node->name_size() == STRLEN_PROPERTY && cname == "Property") {
-        cout << "This is a property!\n";
-        // Does the name of the parent match?
+        // This node is a Property. Does the name of the parent match?
         if (parentName == containerName) {
             // Yes, matches. does name attribute of this Property match propertyName?q
             if (!nattr) {
@@ -576,8 +569,8 @@ ModelPreflight::findProperty (xml_node<>* current_node,
                 }
             }
         } else {
-            // This is a Property, but it has the wrong parent container.
-            cout << "parentName: " << parentName << " != containerName: " <<  containerName << endl;
+            // This is a Property, but it has the wrong parent
+            // container: parentName != containerName.
         }
 
     } else {

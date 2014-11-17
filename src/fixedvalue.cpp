@@ -53,7 +53,7 @@ FixedValue::writeULPropertyValue (xml_document<>* the_doc,
         throw runtime_error ("FixedValue::writeULPropertyValue: doc is null");
     }
     // Allocate new fixed value node
-    xml_node<>* fv_node = the_doc->allocate_node (node_element, "FixedValue");
+    xml_node<>* fv_node = the_doc->allocate_node (node_element, "UL:FixedValue");
     // Allocate and append an attribute
     stringstream val_ss;
     val_ss << this->value;

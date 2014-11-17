@@ -160,7 +160,19 @@ Experiment::addPropertyChangeRequest (const string& pcrequest)
 
     // Now sanity check the elements.
     if (elements.size() != 3) {
-        throw runtime_error ("Wrong number of elements in property change request.");
+        stringstream ee;
+        ee << "Wrong number of elements in property change request.\n";
+        if (elements.size() == 2) {
+            ee << "Two elements in property change request (expect 3):\n";
+            ee << "Population/Projection: " << elements[0] << "\n";
+            ee << "Property Name: " << elements[1] << "\n";
+        } else if (elements.size() == 1) {
+            ee << "One element in property change request (expect 3):\n";
+            ee << "Population/Projection: " << elements[0] << "\n";
+        } else {
+            ee << elements.size() << " elements in property change request (expect 3).\n";
+        }
+        throw runtime_error (ee.str());
     }
 
     cout << "Property change request: Override property '" << elements[1]

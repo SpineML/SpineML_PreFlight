@@ -27,6 +27,13 @@ namespace spineml
         static void stripUnixFile (std::string& unixPath);
 
         /*!
+         * Given a path like /path/to/file in str, remove all
+         * the preceding /path/to/ stuff to leave just the
+         * filename.
+         */
+        static void stripUnixPath (std::string& unixPath);
+
+        /*!
          * A little utility. Given a @param unixPath containing
          * "blah.xml", change unixPath to "blah".
          */

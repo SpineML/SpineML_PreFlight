@@ -21,40 +21,50 @@ Util::stripUnixFile (std::string& unixPath)
 }
 
 void
+Util::stripUnixPath (std::string& unixPath)
+{
+    string::size_type pos (unixPath.find_last_of ('/'));
+
+    if (pos != string::npos) {
+        unixPath = unixPath.substr (++pos);
+    }
+}
+
+void
 Util::stripFileSuffix (string& unixPath)
 {
-        string::size_type pos (unixPath.rfind('.'));
-        if (pos != string::npos) {
-                // We have a '.' character
-                string tmp (unixPath.substr (0, pos));
-                if (!tmp.empty()) {
-                        unixPath = tmp;
-                }
+    string::size_type pos (unixPath.rfind('.'));
+    if (pos != string::npos) {
+        // We have a '.' character
+        string tmp (unixPath.substr (0, pos));
+        if (!tmp.empty()) {
+            unixPath = tmp;
         }
+    }
 }
 
 int
 Util::stripChars (std::string& input, const std::string& charList)
 {
-        int rtn(0);
-        string::size_type pos(0);
-        while ((pos = input.find_last_of (charList)) != string::npos) {
-                input.erase (pos, 1);
-                ++rtn;
-        }
-        return rtn;
+    int rtn(0);
+    string::size_type pos(0);
+    while ((pos = input.find_last_of (charList)) != string::npos) {
+        input.erase (pos, 1);
+        ++rtn;
+    }
+    return rtn;
 }
 
 int
 Util::stripChars (std::string& input, const char charList)
 {
-        int rtn(0);
-        string::size_type pos(0);
-        while ((pos = input.find_last_of (charList)) != string::npos) {
-                input.erase (pos, 1);
-                ++rtn;
-        }
-        return rtn;
+    int rtn(0);
+    string::size_type pos(0);
+    while ((pos = input.find_last_of (charList)) != string::npos) {
+        input.erase (pos, 1);
+        ++rtn;
+    }
+    return rtn;
 }
 
 pair<double, string>

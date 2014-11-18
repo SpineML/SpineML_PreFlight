@@ -41,3 +41,4 @@ config.*
 
 ## Explicit programs to ignore
 spineml_preflight
+ebd_float2double

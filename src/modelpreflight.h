@@ -21,6 +21,12 @@
  */
 #define LVL "LL:"
 
+/*!
+ * This encloses some code which should only be a temporary feature of
+ * SpineML_PreFlight.
+ */
+#define EXPLICIT_BINARY_DATA_CONVERSION 1
+
 namespace spineml
 {
     /*!
@@ -83,8 +89,40 @@ namespace spineml
          */
         void write (void);
 
-    private:
+#ifdef EXPLICIT_BINARY_DATA_CONVERSION
+    public:
+        /*!
+         * A utility - convert all explicit data binary files
+         * referenced by the model from int,float format to int,double
+         * format.  The int,float format came in with commit eac72eb
+         * in SpineCreator.
+         *
+         * SpineCreator commit 19a3a42 converted this to int,double,
+         * to match up with BRAHMS.
+         */
+        void binaryDataFloatToDouble (bool forwards = true);
 
+        /*!
+         * The inverse of binaryDataFloatToDouble.
+         */
+        void binaryDataDoubleToFloat (void);
+
+    private:
+        /*!
+         * Set to true if we're converting int,float to int,double;
+         * false if we're converting int,double to int,float.
+         */
+        bool binaryDataF2D;
+
+        rapidxml::xml_node<>* findExplicitData (rapidxml::xml_node<>* current_node,
+                                                const unsigned int& run);
+
+        void binaryDataVerify (rapidxml::xml_node<>* binaryfile_node);
+
+        void binaryDataModify (rapidxml::xml_node<>* binaryfile_node);
+#endif // EXPLICIT_BINARY_DATA_CONVERSION
+
+    private:
         /*!
          * Find the number of neurons in the destination population, starting
          * from the root node or the first population node (globals/members).

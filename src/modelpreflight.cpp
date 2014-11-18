@@ -589,3 +589,228 @@ ModelPreflight::findProperty (xml_node<>* current_node,
 
     return rtn;
 }
+
+#ifdef EXPLICIT_BINARY_DATA_CONVERSION
+#include <cstdio>
+
+void
+ModelPreflight::binaryDataFloatToDouble (bool forwards)
+{
+    // Iterate through model. For each binaryDatafile thing, convert.
+    this->init();
+    this->binaryDataF2D = forwards;
+    if (this->binaryDataF2D) {
+        cout << "Float to double conversion requested" << endl;
+    } else {
+        cout << "Double to float conversion requested" << endl;
+    }
+    // On run 1, this checks that all binary files have correct size.
+    this->findExplicitData (static_cast<xml_node<>*>(0), 1);
+    cout << "binaryDataFiles can be converted; proceeding!\n";
+    // On run 2, the binary files are modified.
+    this->findExplicitData (static_cast<xml_node<>*>(0), 2);
+}
+
+void
+ModelPreflight::binaryDataDoubleToFloat (void)
+{
+    this->binaryDataFloatToDouble (false);
+}
+
+#define STRLEN_BINARYFILE 10
+xml_node<>*
+ModelPreflight::findExplicitData (xml_node<>* current_node, const unsigned int& run)
+{
+    xml_node<>* rtn = static_cast<xml_node<>*>(0);
+
+    if (current_node == rtn /* i.e. static_cast<xml_node<>*>(0) */) {
+        if (this->root_node == rtn) {
+            throw runtime_error ("findExplicitData: root_node is not allocated.");
+        }
+        current_node = this->root_node;
+    }
+
+    // 1. Is current_node a BinaryFile?
+    string cname = current_node->name();
+
+    if (current_node->name_size() == STRLEN_BINARYFILE && cname == "BinaryFile") {
+        // This node is a BinaryFile element. Is it connectionN.bin
+        // (ignore) or explicitDataBinaryFileN.bin (modify)?
+        xml_attribute<>* nattr = current_node->first_attribute ("file_name");
+        string bf_fname("");
+        if (nattr) {
+            bf_fname = nattr->value();
+        }
+
+        if (bf_fname.substr(0,12) == "explicitData") {
+            // Modify!
+            if (run == 1) {
+                this->binaryDataVerify (current_node);
+            } else if (run == 2) {
+                this->binaryDataModify (current_node);
+            } else {
+                throw runtime_error ("unexpected run number.");
+            }
+            rtn = current_node;
+        }
+
+    } else {
+        // Not a BinaryFile, so search down then sideways
+        xml_node<>* next_node;
+        for (next_node = current_node->first_node();
+             next_node;
+             next_node = next_node->next_sibling()) {
+
+            if ((rtn = this->findExplicitData (next_node, run)) != static_cast<xml_node<>*>(0)) {
+                // next_node was a BinaryFile of interest!
+            }
+        }
+    }
+
+    return rtn;
+}
+
+void
+ModelPreflight::binaryDataVerify (xml_node<>* binaryfile_node)
+{
+    xml_attribute<>* nattr = binaryfile_node->first_attribute ("file_name");
+    string bf_fname("");
+    if (nattr) {
+        bf_fname = nattr->value();
+    }
+    xml_attribute<>* nelemattr = binaryfile_node->first_attribute ("num_elements");
+    stringstream ss;
+    unsigned int num_elements = 0;
+    if (nelemattr) {
+        ss << nelemattr->value();
+        ss >> num_elements;
+    }
+
+    cout << "Verify file " << bf_fname << " which has  " << num_elements << " elements\n";
+
+    string fname = this->modeldir + bf_fname;
+    ifstream f;
+    f.open (fname.c_str(), ios::in);
+    if (!f.is_open()) {
+        stringstream ee;
+        ee << "binaryDataVerify: Failed to open file " << fname << " for reading";
+    }
+    // Get size;
+    f.seekg (0, ios::end);
+    unsigned int nbytes = f.tellg();
+    f.close();
+
+    cout << "num_elements=" << num_elements
+         << " nbytes=" << nbytes << " nbytes/8=" << nbytes/8
+         << " nbytes/12=" << nbytes/12 << endl;
+    if (nbytes/8 == num_elements) {
+        // We're in int,float format.
+        if (this->binaryDataF2D == true) {
+            // Good, can move on
+        } else {
+            // Bad, tasked to do double to float conversion, but data already float
+            throw runtime_error ("explicitBinaryData is already in int,float format.");
+        }
+    } else if (nbytes/12 == num_elements) {
+        // We're in int,double format.
+        if (this->binaryDataF2D == false) {
+            // Good, can move on and do double2float conversion
+        } else {
+            // Bad, tasked to do float to double conversion, but data already double
+            throw runtime_error ("explicitBinaryData is already in int,double format.");
+        }
+    } else {
+        throw runtime_error ("Wrong number of bytes in explicitBinaryData");
+    }
+}
+
+void
+ModelPreflight::binaryDataModify (xml_node<>* binaryfile_node)
+{
+    xml_attribute<>* nattr = binaryfile_node->first_attribute ("file_name");
+    string bf_fname("");
+    if (nattr) {
+        bf_fname = nattr->value();
+    }
+    xml_attribute<>* nelemattr = binaryfile_node->first_attribute ("num_elements");
+    stringstream ss;
+    unsigned int num_elements = 0;
+    if (nelemattr) {
+        ss << nelemattr->value();
+        ss >> num_elements;
+    }
+
+    cout << "Modify file " << bf_fname << " which has  " << num_elements << " elements\n";
+
+    // When this code runs, the verify function should already have run.
+    string fname = this->modeldir + bf_fname;
+    ifstream f;
+    f.open (fname.c_str(), ios::in);
+    if (!f.is_open()) {
+        stringstream ee;
+        ee << "binaryDataModify: Failed to open file " << fname << " for reading";
+    }
+    string tmpfname = fname + ".out";
+    ofstream o;
+    o.open (tmpfname.c_str(), ios::out|ios::trunc);
+    if (!o.is_open()) {
+        stringstream ee;
+        ee << "binaryDataModify: Failed to open file " << tmpfname << " for writing";
+    }
+
+    int index; float value; double dvalue;
+    if (this->binaryDataF2D == true) {
+        // Float to double conversion
+        try {
+            while (!f.eof()) {
+                f.read (reinterpret_cast<char*>(&index), sizeof index);
+                if (f.eof()) {
+                    // Finished reading.
+                    break;
+                }
+                o.write (reinterpret_cast<char*>(&index), sizeof index);
+                f.read (reinterpret_cast<char*>(&value), sizeof value);
+                if (f.eof()) {
+                    cout << "Finished reading in unexpected location\n";
+                    break;
+                }
+                dvalue = static_cast<double>(value);
+                o.write (reinterpret_cast<char*>(&dvalue), sizeof dvalue);
+            }
+        } catch (const std::exception& e) {
+            throw runtime_error ("Exception copying");
+        }
+    } else {
+        // Double to float conversion
+        try {
+            while (!f.eof()) {
+                f.read (reinterpret_cast<char*>(&index), sizeof index);
+                if (f.eof()) {
+                    // Finished reading
+                    break;
+                }
+                o.write (reinterpret_cast<char*>(&index), sizeof index);
+                f.read (reinterpret_cast<char*>(&dvalue), sizeof dvalue);
+                if (f.eof()) {
+                    cout << "Finished reading in unexpected location\n";
+                    break;
+                }
+                value = static_cast<float>(dvalue);
+                o.write (reinterpret_cast<char*>(&value), sizeof value);
+            }
+        } catch (const std::exception& e) {
+            throw runtime_error ("Exception copying");
+        }
+    }
+    o.close();
+    f.close();
+
+    // Rename files
+    string bufname = fname + ".bu";
+    // Move existing file to file.bu
+    rename (fname.c_str(), bufname.c_str());
+    // Move new file.out to file
+    rename (tmpfname.c_str(), fname.c_str());
+}
+
+#endif // EXPLICIT_BINARY_DATA_CONVERSION

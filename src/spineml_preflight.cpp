@@ -151,9 +151,16 @@ int main (int argc, char * argv[])
                                  "with the -e option.");
         }
 
+        string expt_path(cmdOptions.expt_path);
         string model_dir(cmdOptions.expt_path);
         Util::stripUnixFile (model_dir);
-        model_dir += "/";
+        if (expt_path == model_dir) {
+            // Then there was no path to strip and so there's no model_dir
+            model_dir = "";
+        } else {
+            // Append a / to the model dir path
+            model_dir += "/";
+        }
 
         spineml::Experiment expt (cmdOptions.expt_path);
         expt.setModelDir (model_dir);

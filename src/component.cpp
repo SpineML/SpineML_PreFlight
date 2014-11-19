@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "component.h"
+#include "util.h"
 
 using namespace std;
 using namespace rapidxml;
@@ -78,8 +79,13 @@ Component::readNameAndType (void)
     xml_attribute<>* name_attr = this->class_node->first_attribute("name");
     if (name_attr) {
         string n = name_attr->value();
+        // Now modify n to be XML-safe.
+        Util::conditionAsXmlTag (n);
         if (this->name != n) {
-            throw runtime_error ("spineml::Component: Failed to verify component name (no match)");
+            stringstream ee;
+            ee << "spineml::Component: Failed to verify component name (this->name="
+               << this->name << " != n="<< n << ")";
+            throw runtime_error (ee.str());
         }
     } else {
         throw runtime_error ("spineml::Component: Failed to verify component name (no name)");

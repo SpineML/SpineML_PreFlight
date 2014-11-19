@@ -9,8 +9,53 @@
 #include <vector>
 #include <utility>
 
+/*!
+ * Useful character sets
+ *
+ * These are ordered so that the most common chars appear earliest.
+ */
+//@{
+#define CHARS_NUMERIC            "0123456789"
+#define CHARS_ALPHA              "etaoinshrdlcumwfgypbvkjxqzETAOINSHRDLCUMWFGYPBVKJXQZ"
+#define CHARS_ALPHALOWER         "etaoinshrdlcumwfgypbvkjxqz"
+#define CHARS_ALPHAUPPER         "ETAOINSHRDLCUMWFGYPBVKJXQZ"
+#define CHARS_NUMERIC_ALPHA      "etaoinshrdlcumwfgypbvkjxqz0123456789ETAOINSHRDLCUMWFGYPBVKJXQZ"
+#define CHARS_NUMERIC_ALPHALOWER "etaoinshrdlcumwfgypbvkjxqz0123456789"
+#define CHARS_NUMERIC_ALPHAUPPER "0123456789ETAOINSHRDLCUMWFGYPBVKJXQZ"
+//@}
+
 namespace spineml
 {
+    /*!
+     * Allows the use of transform and tolower() on strings with
+     * GNU compiler
+     */
+    class to_lower
+    {
+    public:
+        /*!
+         * Apply lower case operation to the char c.
+         */
+        char operator() (const char c) const {
+            return tolower(c);
+        }
+    };
+
+    /*!
+     * Allows the use of transform and toupper() on strings with
+     * GNU compiler
+     */
+    class to_upper
+    {
+    public:
+        /*!
+         * Apply upper case operation to the char c.
+         */
+        char operator() (const char c) const {
+            return toupper(c);
+        }
+    };
+
     /*!
      * A collection of static, utility functions used in
      * spineml_preflight.
@@ -47,6 +92,13 @@ namespace spineml
         static int stripChars (std::string& input, const std::string& charList);
         static int stripChars (std::string& input, const char charList);
         //@}
+
+        /*!
+         * Take the string str and condition it, so that it makes a
+         * valid XML tag, by replacing disallowed characters with '_'
+         * and making sure it doesn't start with a numeral.
+         */
+        static void conditionAsXmlTag (std::string& str);
 
         /*!
          * This splits up a "search style" string into tokens.

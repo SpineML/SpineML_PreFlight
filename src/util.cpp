@@ -87,7 +87,7 @@ Util::conditionAsXmlTag (std::string& str)
     transform (firstThree.begin(), firstThree.end(),
                firstThree.begin(), spineml::to_lower());
     if (firstThree == "xml") {
-        // Prepend 'A'
+        // Prepend '_'
         string newStr("_");
         newStr += str;
         str = newStr;

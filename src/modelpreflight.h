@@ -31,7 +31,12 @@ namespace spineml
 {
     /*!
      * A class to read, then find and replace relevant sections of
-     * model.xml
+     * model.xml.
+     *
+     * EXPLICIT_BINARY_DATA_CONVERSION:
+     * This class also contains code to swap formats between explicitData
+     * formats int,float and int,double. This code allows me to build the
+     * program e2b_float2double.
      */
     class ModelPreflight
     {

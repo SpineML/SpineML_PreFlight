@@ -154,30 +154,7 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
     // Now get the component name - this is user specified and there
     // should be an XML file associated with the component with this
     // name + .xml
-    string c_name("");
-    xml_attribute<>* cname_attr;
-    if ((cname_attr = neuron_node->first_attribute ("url"))) {
-        c_name = cname_attr->value();
-    }
-    Util::stripFileSuffix (c_name);
-
-    if (c_name.empty()) {
-        stringstream ee;
-        ee << "Failed to read component name for population "
-           << src_name << "; can't proceed";
-        throw runtime_error (ee.str());
-    }
-
-    // Can now read additional information about the component, if
-    // necessary.
-    if (!this->components.count (c_name)) {
-        try {
-            spineml::Component c (modeldir, c_name);
-            this->components.insert (make_pair (c_name, c));
-        } catch (const std::exception& e) {
-            cerr << "Failed to read component " << c_name << ": " << e.what() << ".\n";
-        }
-    }
+    string c_name = this->get_component_name (neuron_node);
 
     string src_num("");
     unsigned int src_number(0);
@@ -190,30 +167,42 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
     } // else failed to get src num
 
     // Now find all Projections out from the neuron and expand any
-    // connections into explict lists, as necessary.
+    // connections into explict lists, as
+    // necessary. preflight_projection also explandxs state variable
+    // properties into binary data.
     for (xml_node<>* proj_node = pop_node->first_node(LVL"Projection");
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
         preflight_projection (proj_node, src_name, src_num);
     }
 
-    // Next, replace any Properties with explicit binary data
+    // Next, replace any Properties with explicit binary data in the
+    // Populations neuron_node (Is there only one of these? What if
+    // neuron is compartmentalised?)
     for (xml_node<>* prop_node = neuron_node->first_node("Property");
          prop_node;
          prop_node = prop_node->next_sibling("Property")) {
+        this->try_replace_statevar_property (prop_node, src_number, c_name);
+    }
+}
 
-        // If this is a state variable property, then replace it.
-        string prop_name("");
-        xml_attribute<>* prop_name_attr = prop_node->first_attribute ("name");
-        if (prop_name_attr) {
-            prop_name = prop_name_attr->value();
-        } else {
-            throw runtime_error ("Failed to get property name");
-        }
-        if (this->components.at(c_name).containsStateVariable (prop_name)) {
-            // This property is a state variable and not a parameter
-            this->replace_statevar_property (prop_node, src_number);
-        }
+void
+ModelPreflight::try_replace_statevar_property (xml_node<>* prop_node,
+                                               unsigned int pop_size,
+                                               const string& component_name)
+{
+    // If this is a state variable property, then replace it.
+    string prop_name("");
+    xml_attribute<>* prop_name_attr = prop_node->first_attribute ("name");
+    if (prop_name_attr) {
+        prop_name = prop_name_attr->value();
+    } else {
+        throw runtime_error ("Failed to get property name");
+    }
+
+    if (this->components.at(component_name).containsStateVariable (prop_name)) {
+        // This property is a state variable and not a parameter
+        this->replace_statevar_property (prop_node, pop_size);
     }
 }
 
@@ -224,7 +213,32 @@ ModelPreflight::replace_statevar_property (xml_node<>* prop_node,
     // Depending on what we find in the property, call differing
     // replace methods:
     xml_node<>* fixedvalue_node = prop_node->first_node("FixedValue");
-    if (fixedvalue_node) {
+    xml_node<>* udist_node = prop_node->first_node("UniformDistribution");
+    xml_node<>* ndist_node = prop_node->first_node("NormalDistribution");
+    xml_node<>* vallist_node = prop_node->first_node("ValueList");
+
+    if (udist_node) {
+        spineml::UniformDistribution ud (udist_node, pop_size);
+        if (!ud.writeAsBinaryValueList (udist_node, this->modeldir,
+                                        this->nextExplicitDataPath())) {
+            this->explicitData_binfilenum--;
+        }
+
+    } else if (ndist_node) {
+        spineml::NormalDistribution nd (ndist_node, pop_size);
+        if (!nd.writeAsBinaryValueList (ndist_node, this->modeldir,
+                                        this->nextExplicitDataPath())) {
+            this->explicitData_binfilenum--;
+        }
+
+    } else if (vallist_node) {
+        spineml::ValueList vl (vallist_node, pop_size);
+        if (!vl.writeAsBinaryValueList (vallist_node, this->modeldir,
+                                        this->nextExplicitDataPath())) {
+            this->explicitData_binfilenum--;
+        }
+
+    } else if (fixedvalue_node) {
         spineml::FixedValue fv (fixedvalue_node, pop_size);
         if (!fv.writeAsBinaryValueList (fixedvalue_node, this->modeldir,
                                         this->nextExplicitDataPath())) {
@@ -232,31 +246,24 @@ ModelPreflight::replace_statevar_property (xml_node<>* prop_node,
             // data binary path was not used, so decrement it again.
             this->explicitData_binfilenum--;
         }
-    }
 
-    xml_node<>* udist_node = prop_node->first_node("UniformDistribution");
-    if (udist_node) {
-        spineml::UniformDistribution ud (udist_node, pop_size);
-        if (!ud.writeAsBinaryValueList (udist_node, this->modeldir,
-                                        this->nextExplicitDataPath())) {
-            this->explicitData_binfilenum--;
-        }
-    }
+    } else {
+        // none of the above - assume property is empty and so treat
+        // as if it had FixedValue 0.
+        // First create node fixedvalue_node and then add it as a child
+        // to prop_node.
+        // NB: expect fixedvalue_node to be null at this point.
+        fixedvalue_node = doc.allocate_node (node_element, "FixedValue");
+        prop_node->prepend_node (fixedvalue_node);
 
-    xml_node<>* ndist_node = prop_node->first_node("NormalDistribution");
-    if (ndist_node) {
-        spineml::NormalDistribution nd (ndist_node, pop_size);
-        if (!nd.writeAsBinaryValueList (ndist_node, this->modeldir,
+        // Now create a new fv object and write it out into fixedvalue_node.
+        spineml::FixedValue fv; // (fixedvalue_node, pop_size);
+        fv.setValue (0.0);
+        fv.setNumInPopulation (pop_size);
+        if (!fv.writeAsBinaryValueList (fixedvalue_node, this->modeldir,
                                         this->nextExplicitDataPath())) {
-            this->explicitData_binfilenum--;
-        }
-    }
-
-    xml_node<>* vallist_node = prop_node->first_node("ValueList");
-    if (vallist_node) {
-        spineml::ValueList vl (vallist_node, pop_size);
-        if (!vl.writeAsBinaryValueList (vallist_node, this->modeldir,
-                                        this->nextExplicitDataPath())) {
+            // if writeAsBinaryValueList returned false, the explicit
+            // data binary path was not used, so decrement it again.
             this->explicitData_binfilenum--;
         }
     }
@@ -308,6 +315,66 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
         // Check if it's already binary, if not, expand.
         connection_list_to_binary (connection_list, src_name, src_num, dst_population);
     }
+
+    // Expand any Property nodes within the <LL:PostSynapse> node.
+    xml_node<>* postsynapse_node = syn_node->first_node(LVL"PostSynapse");
+    if (postsynapse_node) {
+        string postsyn_cmpt_name = this->get_component_name (postsynapse_node);
+        // Now do the property replacements
+        for (xml_node<>* prop_node = postsynapse_node->first_node("Property");
+             prop_node;
+             prop_node = prop_node->next_sibling("Property")) {
+            // Assume pop_size is always 1 for postsynapse until Alex gets back to me.
+            this->try_replace_statevar_property (prop_node, 1, postsyn_cmpt_name);
+        }
+    }
+
+    // Expand any Property nodes within the <LL:WeightUpdate> node.
+    xml_node<>* weightupdate_node = syn_node->first_node(LVL"WeightUpdate");
+    if (weightupdate_node) {
+        string wu_cmpt_name = this->get_component_name (weightupdate_node);
+        // Now do the property replacements
+        for (xml_node<>* prop_node = weightupdate_node->first_node("Property");
+             prop_node;
+             prop_node = prop_node->next_sibling("Property")) {
+            // Assume pop_size is always 1 for weight update until Alex gets back to me.
+            this->try_replace_statevar_property (prop_node, 1, wu_cmpt_name);
+        }
+    }
+}
+
+std::string
+ModelPreflight::get_component_name (xml_node<>* component_node)
+{
+    // We have a postsynapse; what's its component name?
+    string cmpt_name("");
+    if (!component_node) {
+        throw runtime_error ("Failed to read component name; component_node is null");
+    }
+    xml_attribute<>* cname_attr;
+    if ((cname_attr = component_node->first_attribute ("url"))) {
+        cmpt_name = cname_attr->value();
+    }
+    Util::stripFileSuffix (cmpt_name);
+
+    if (cmpt_name.empty()) {
+        throw runtime_error ("Failed to read component name; can't proceed");
+    }
+
+    // Can now read additional information about the component, if
+    // necessary.
+    if (!this->components.count (cmpt_name)) {
+        try {
+            spineml::Component c (modeldir, cmpt_name);
+            this->components.insert (make_pair (cmpt_name, c));
+        } catch (const std::exception& e) {
+            stringstream ee;
+            ee << "Failed to read component " << cmpt_name << ": " << e.what() << ".\n";
+            throw runtime_error (ee.str());
+        }
+    }
+
+    return cmpt_name;
 }
 
 void

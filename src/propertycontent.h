@@ -78,6 +78,13 @@ namespace spineml
         void setPropertyDim (const std::string& dim);
 
         /*!
+         * Setter for numInPopulation.
+         *
+         * @param n The new number for numInPopulation
+         */
+        void setNumInPopulation (unsigned int n);
+
+        /*!
          * Populate \verbatim<UL:Property>\endverbatim element with
          * this \verbatim<FixedValue>\endverbatim
          *

@@ -127,3 +127,9 @@ PropertyContent::setPropertyDim (const string& dim)
 {
     this->propertyDim = dim;
 }
+
+void
+PropertyContent::setNumInPopulation (unsigned int n)
+{
+    this->numInPopulation = n;
+}

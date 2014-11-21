@@ -353,9 +353,44 @@ namespace spineml
          *
          * @param pop_size the number of members in the parent
          * population (this goes in the num_elements attrbute of the
-         * BinaryFile node).
+         * BinaryFile node). May also be the number of ? in the
+         * postsynapse.
          */
         void replace_statevar_property (rapidxml::xml_node<>* prop_node, unsigned int pop_size);
+
+        /*!
+         * Replace a fixed value or random distribution state variable
+         * property with an explicit binary file.
+         *
+         * Sub-calls replace_statevar_property
+         *
+         * \see replace_statevar_property
+         *
+         * @param prop_node The property within which the (e.g.)
+         * FixedValue will be replaced.
+         *
+         * @param pop_size the number of members in the parent
+         * population (this goes in the num_elements attrbute of the
+         * BinaryFile node).
+         *
+         * @param component_name The component name for the component
+         * enclosing the property. This may be a neuron body
+         * component, a weight component or a postsynapse component.
+         */
+        void try_replace_statevar_property (rapidxml::xml_node<>* prop_node, unsigned int pop_size,
+                                            const std::string& component_name);
+
+        /*!
+         * For the given component node (it might be a neuron body, a
+         * weight component or a postsynapse component), find the
+         * component name and return this.
+         *
+         * @param component_node Pointer to the component node whose
+         * name is to be found.
+         *
+         * @return The component name.
+         */
+        std::string get_component_name (rapidxml::xml_node<>* component_node);
 
         /*!
          * Generate the next file path for an explicit data file.

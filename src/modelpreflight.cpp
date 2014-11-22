@@ -88,10 +88,12 @@ ModelPreflight::preflight (void)
 {
     this->init();
     // Search each population for stuff.
-    for (this->first_pop_node = this->root_node->first_node(LVL"Population");
-         this->first_pop_node;
-         this->first_pop_node = this->first_pop_node->next_sibling(LVL"Population")) {
-        this->preflight_population (this->first_pop_node);
+    this->first_pop_node = this->root_node->first_node(LVL"Population");
+    xml_node<>* pop_node = this->first_pop_node;
+    for (pop_node = this->root_node->first_node(LVL"Population");
+         pop_node;
+         pop_node = pop_node->next_sibling(LVL"Population")) {
+        this->preflight_population (pop_node);
     }
 }
 
@@ -316,6 +318,16 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
         connection_list_to_binary (connection_list, src_name, src_num, dst_population);
     }
 
+    int dstNum_ = this->find_num_neurons (dst_population);
+    unsigned int dstNum(0);
+    if (dstNum_ != -1) {
+        dstNum = static_cast<unsigned int>(dstNum_);
+    } else {
+        stringstream ee;
+        ee << "Failed to find the number of neurons in the destination population '" << dst_population << "'";
+        throw runtime_error (ee.str());
+    }
+
     // Expand any Property nodes within the <LL:PostSynapse> node.
     xml_node<>* postsynapse_node = syn_node->first_node(LVL"PostSynapse");
     if (postsynapse_node) {
@@ -324,8 +336,8 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
         for (xml_node<>* prop_node = postsynapse_node->first_node("Property");
              prop_node;
              prop_node = prop_node->next_sibling("Property")) {
-            // Assume pop_size is always 1 for postsynapse until Alex gets back to me.
-            this->try_replace_statevar_property (prop_node, 1, postsyn_cmpt_name);
+            // size should be size of dest population
+            this->try_replace_statevar_property (prop_node, dstNum, postsyn_cmpt_name);
         }
     }
 
@@ -337,10 +349,47 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
         for (xml_node<>* prop_node = weightupdate_node->first_node("Property");
              prop_node;
              prop_node = prop_node->next_sibling("Property")) {
-            // Assume pop_size is always 1 for weight update until Alex gets back to me.
-            this->try_replace_statevar_property (prop_node, 1, wu_cmpt_name);
+            // Size should be number of connections. LL:Synapse will
+            // contain a OneToOneConnection or an AllToAllConnection
+            // or a ConnectionList containing a BinaryFile with some
+            // num_connections.
+            unsigned int num_connections = this->get_num_connections (syn_node, dstNum);
+            this->try_replace_statevar_property (prop_node, num_connections, wu_cmpt_name);
         }
     }
+}
+
+unsigned int
+ModelPreflight::get_num_connections (xml_node<>* synapse_node,
+                                     unsigned int num_in_dst_population)
+{
+    // Although there can also be FixedProbability and
+    // python-generated connections, we don't expect to see those
+    // here. python-generated will at this point be ConnectionLists
+    // and FixedProbability should have been previously preflighted
+    // into a Connectionlist.
+    xml_node<>* onetoone_node = synapse_node->first_node("OneToOneConnection");
+    xml_node<>* alltoall_node = synapse_node->first_node("AllToAllConnection");
+    xml_node<>* conn_list_node = synapse_node->first_node("ConnectionList");
+
+    unsigned int rtn = 0;
+    if (onetoone_node) {
+        rtn = num_in_dst_population;
+    } else if (alltoall_node) {
+        rtn = num_in_dst_population * num_in_dst_population;
+    } else if (conn_list_node) {
+        xml_node<>* binaryfile_node = conn_list_node->first_node ("BinaryFile");
+        if (binaryfile_node) {
+            xml_attribute<>* num_conn_attr = binaryfile_node->first_attribute ("num_connections");
+            if (num_conn_attr) {
+                stringstream ss;
+                ss << num_conn_attr->value();
+                ss >> rtn;
+            }
+        }
+    } // else we return 0.
+
+    return rtn;
 }
 
 std::string
@@ -494,7 +543,9 @@ ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
     if (dstNum_ != -1) {
         dstNum = static_cast<unsigned int>(dstNum_);
     } else {
-        throw runtime_error ("Failed to find the number of neurons in the destination population.");
+        stringstream ee;
+        ee << "Failed to find the number of neurons in the destination population '" << dst_population << "'";
+        throw runtime_error (ee.str());
     }
 
     cl.generateFixedProbability (seed, probabilityValue, srcNum, dstNum);

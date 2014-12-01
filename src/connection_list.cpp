@@ -91,8 +91,17 @@ ConnectionList::generateFixedProbability (const int& seed, const float& probabil
     // rngData.seed hardcoded to 123? I think it basically doesn't
     // matter, and the seed to zigset is different from the one to
     // rngData.seed.
-    zigset (&rngData, 1+seed);
-    rngData.seed = seed;
+    //
+    // Here, I've reproduced the exact behaviour of
+    // SpineML_2_BRAHMS_CL_weight.xsl around line 271
+    int zigset_seed = 0;
+    {
+        stringstream seed_ss;
+        seed_ss << "1" << seed; // "1" then the seed. So for seed=123, we pass 1123 to zigset_seed.
+        seed_ss >> zigset_seed;
+    }
+    zigset (&rngData, zigset_seed);
+    rngData.seed = 123; // Hardcoded, as in SpineML_2_BRAHMS_CL_weight.xsl around line 272
 
     // run through connections, creating connectivity pattern:
     this->connectivityC2D.reserve (dstNum); // probably num from dst_population

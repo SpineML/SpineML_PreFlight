@@ -138,7 +138,6 @@ int main (int argc, char * argv[])
          "This option can be used multiple times."},
 
         POPT_AUTOALIAS
-        POPT_AUTOHELP
         POPT_TABLEEND
     };
     poptContext con;

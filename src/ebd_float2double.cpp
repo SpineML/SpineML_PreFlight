@@ -69,7 +69,6 @@ int main (int argc, char * argv[])
          "If set, convert backwards from double to float, not forwards from float to double."},
 
         POPT_AUTOALIAS
-        POPT_AUTOHELP
         POPT_TABLEEND
     };
     poptContext con;

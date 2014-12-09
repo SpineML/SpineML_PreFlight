@@ -169,13 +169,19 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
     } // else failed to get src num
 
     // Now find all Projections out from the neuron and expand any
-    // connections into explict lists, as
-    // necessary. preflight_projection also explandxs state variable
+    // connections into explicit lists, as
+    // necessary. preflight_projection() also expands state variable
     // properties into binary data.
     for (xml_node<>* proj_node = pop_node->first_node(LVL"Projection");
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
         preflight_projection (proj_node, src_name, src_num);
+    }
+
+    if (c_name == "SpikeSource") {
+        // No statevar properties to change in the special neuron type
+        // "SpikeSource"
+        return;
     }
 
     // Next, replace any Properties with explicit binary data in the
@@ -408,6 +414,11 @@ ModelPreflight::get_component_name (xml_node<>* component_node)
 
     if (cmpt_name.empty()) {
         throw runtime_error ("Failed to read component name; can't proceed");
+    } else if (cmpt_name == "SpikeSource") {
+        // A SpikeSource is a special population which doesn't have a
+        // component xml file associated with it. Return "SpikeSource"
+        // as component name.
+        return cmpt_name;
     }
 
     // Can now read additional information about the component, if

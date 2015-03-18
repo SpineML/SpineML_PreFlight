@@ -9,6 +9,8 @@ AM_INIT_AUTOMAKE([1.9 foreign])
 
 AC_CONFIG_HEADER(src/config.h)
 
+AC_CONFIG_MACRO_DIR([m4])
+
 AC_LANG_CPLUSPLUS
 
 dnl Checks for programs.
@@ -135,13 +137,25 @@ else
   AC_MSG_ERROR([compiler has no 8 byte double])
 fi
 
+dnl Force build even without popt.pc
+AC_ARG_ENABLE(popt-pkgconfig,
+  [ --enable-popt-pkgconfig  [default=yes]],
+  [case "${enableval}" in
+    yes) popt_pkgconfig=yes ;;
+    no)  popt_pkgconfig=no ;;
+    *) AC_MSG_ERROR(bad value ${enableval} for --enable-popt-pkgconfig) ;;
+  esac], popt_pkgconfig=yes)
 dnl Check for popt - perhaps only if user asks for a check? Iceberg
 dnl has popt, but not the popt.pc file.
-PKG_CHECK_MODULES(POPT, popt >= 1.0, [
-                        AC_MSG_NOTICE([Found popt using pkg-config :)])
-                        ], [
-                        AC_MSG_WARN([Failed to find popt with pkg-config. Carrying on in the hope that it's there anyway...])
-                        ])
+if test "$popt_pkgconfig" = no; then
+  AC_MSG_NOTICE([Not using pkg-config to find popt, just assuming it will work.])
+else
+  PKG_CHECK_MODULES(POPT, popt >= 1.0, [
+                    AC_MSG_NOTICE([Found popt using pkg-config :)])
+                    ], [
+                    AC_MSG_ERROR([Failed to find popt with pkg-config. Ensure it's present then configure with --disable-popt-pkgconfig])
+                    ])
+fi
 
 dnl List the Makefiles to output
 AC_CONFIG_FILES([

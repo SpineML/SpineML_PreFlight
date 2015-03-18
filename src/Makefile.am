@@ -1,4 +1,4 @@
-INCLUDES=-I$(top_srcdir)/include/rapidxml-1.13
+AM_CPPFLAGS=-I$(top_srcdir)/include/rapidxml-1.13
 
 bin_PROGRAMS = spineml_preflight ebd_float2double
 

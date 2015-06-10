@@ -45,7 +45,12 @@ ModelPreflight::write (void)
     if (this->backup == true) {
         stringstream cmd;
         cmd << "cp " << filepath << " " << filepath << ".bu";
-        system (cmd.str().c_str());
+        int rtn = system (cmd.str().c_str());
+        if (rtn) {
+            stringstream ee;
+            ee << "ModelPreflight::write: Call to cp failed with return code: "
+               << rtn << endl;
+        }
     }
 
     // Write model.xml:

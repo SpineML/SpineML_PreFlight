@@ -193,6 +193,37 @@ Experiment::addPropertyChangeRequest (const string& pcrequest)
 }
 
 void
+Experiment::addConstantCurrentRequest (const string& ccrequest)
+{
+    // Looks like: "Population:port:value" where value is a scalar current
+    vector<string> elements = Util::splitStringWithEncs (ccrequest);
+
+    // Now sanity check the elements.
+    if (elements.size() != 3) {
+        stringstream ee;
+        ee << "Wrong number of elements in constant current request.\n";
+        if (elements.size() == 2) {
+            ee << "Two elements in constant current request (expect 3):\n";
+            ee << "Population/Projection: " << elements[0] << "\n";
+            ee << "Port: " << elements[1] << "\n";
+        } else if (elements.size() == 1) {
+            ee << "One element in constant current request (expect 3):\n";
+            ee << "Population/Projection: " << elements[0] << "\n";
+        } else {
+            ee << elements.size() << " elements in property change request (expect 3).\n";
+        }
+        throw runtime_error (ee.str());
+    }
+
+    cout << "Preflight: Constant current request: '" << elements[0]
+         << "'->'" << elements[1] << "' receives constant input '" << elements[2] << "'\n";
+
+    // We have the elements, can now insert a node into our
+    // experiment.
+    this->insertExptConstCurrent (elements);
+}
+
+void
 Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& elements)
 {
     xml_document<> doc;
@@ -280,6 +311,89 @@ Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& 
     // node, if the Configuration node has been newly created.
     if (created_node == true) {
         model_node->prepend_node (into_node);
+    }
+
+    // At end, write out the xml.
+    this->write (doc);
+}
+
+void
+Experiment::insertExptConstCurrent (const vector<string>& elements)
+{
+    xml_document<> doc;
+    AllocAndRead ar(this->filepath);
+    char* textptr = ar.data();
+    doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
+    // NB: This really DOES have to be the root node.
+    xml_node<>* root_node = doc.first_node("SpineML");
+    if (!root_node) {
+        throw runtime_error ("experiment XML: no root SpineML node");
+    }
+    xml_node<>* expt_node = root_node->first_node ("Experiment");
+    if (!expt_node) {
+        throw runtime_error ("experiment XML: no Experiment node");
+    }
+
+    // Need to replace or insert a ConstantInput node in
+    // expt_node.
+
+    xml_node<>* into_node = static_cast<xml_node<>*>(0);
+    // Go through each existing ConstantInput, if we find the one we
+    // want to replace, then copy the pointer into "into_node".
+    for (xml_node<>* ci_node = expt_node->first_node ("ConstantInput");
+         ci_node;
+         ci_node = ci_node->next_sibling ("ConstantInput")) {
+        xml_attribute<>* targattr = ci_node->first_attribute ("target");
+        if (targattr) {
+            string target(targattr->value());
+            if (target == elements[0]) {
+                // target matches, now look at port.
+                xml_attribute<>* portattr = ci_node->first_attribute ("port");
+                if (portattr) {
+                    string port(portattr->value());
+                    if (port == elements[1]) {
+                        // port matches, so replace this node.
+                        into_node = ci_node;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    bool created_node (false);
+    if (!into_node) { // into_node will be a "ConstantInput"
+        // Create into_node as it doesn't already exist.
+        into_node = doc.allocate_node (node_element, "ConstantInput");
+        created_node = true;
+    } // else existing matching configuration found
+
+    // 1. Remove any existing attributes and child nodes from into_node.
+    into_node->remove_all_attributes();
+    into_node->remove_all_nodes();
+    // 2. Add new target attribute
+    char* targstr_alloced = doc.allocate_string (elements[0].c_str());
+    xml_attribute<>* target_attr = doc.allocate_attribute ("target", targstr_alloced);
+    into_node->append_attribute (target_attr);
+
+    // 3. Add Port
+    char* portstr_alloced = doc.allocate_string (elements[1].c_str());
+    xml_attribute<>* port_attr = doc.allocate_attribute ("port", portstr_alloced);
+    into_node->append_attribute (port_attr);
+
+    // 4. Add value
+    char* valstr_alloced = doc.allocate_string (elements[2].c_str());
+    xml_attribute<>* val_attr = doc.allocate_attribute ("value", valstr_alloced);
+    into_node->append_attribute (val_attr);
+
+    // 5. Add name attribute (same value as port)
+    xml_attribute<>* name_attr = doc.allocate_attribute ("name", portstr_alloced);
+    into_node->append_attribute (name_attr);
+
+    // Now add the new ConstantInput node to the Experiment node node,
+    // if ConstantInput node was newly created.
+    if (created_node == true) {
+        expt_node->prepend_node (into_node);
     }
 
     // At end, write out the xml.

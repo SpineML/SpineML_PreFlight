@@ -76,6 +76,20 @@ namespace spineml
         void addPropertyChangeRequest (const std::string& pcrequest);
 
         /*!
+         * Add the raw constant current request, as provided on the
+         * command line. If the request has a bad format, throw an
+         * exception.
+         *
+         * Like addPropertyChangeRequest, this method splits up the
+         * single command line option passed as @param pcrequest It
+         * then checks in the model.xml to ensure that the requested
+         * property exists. If this turns out to be the case, it then
+         * calls @see insertModelConfig to add the constant
+         * current/model configuration update.
+         */
+        void addConstantCurrentRequest (const std::string& ccrequest);
+
+        /*!
          * This actually does the work of inserting a new
          * Configuration node to the experiment's Model node. Its
          * passed a vector of 3 elements: target population, target
@@ -84,6 +98,8 @@ namespace spineml
          */
         void insertModelConfig (rapidxml::xml_node<>* property_node,
                                 const std::vector<std::string>& elements);
+
+        void insertExptConstCurrent (const std::vector<std::string>& elements);
 
         //! A simple accessor for this->modelDir.
         void setModelDir (const std::string& dir);

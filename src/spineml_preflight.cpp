@@ -60,6 +60,10 @@ struct CmdOptions {
     char * property_change;
     //! To hold a list of all property changes requested by the user
     vector<string> property_changes;
+    //! To hold the current constant current option string. Used temporarily by the constant current option (-c).
+    char * constant_current;
+    //! To hold a list of all constant currents requested by the user
+    vector<string> constant_currents;
 };
 
 /*!
@@ -80,10 +84,12 @@ void zeroCmdOptions (CmdOptions* copts)
 struct CmdOptions cmdOptions;
 
 /*!
- * This callback is used when there's a -p option, to allow my to
+ * This callback is used when there's a -p option, to allow me to
  * collect multiple property change directives from the user.
  *
  * e.g. spineml_preflight --property_change="Pop:tau:43" --property_change="Pop:m:0.203"
+ *
+ * It also handles -c options for constant currents.
  */
 void property_change_callback (poptContext con,
                                enum poptCallbackReason reason,
@@ -101,7 +107,11 @@ void property_change_callback (poptContext con,
         break;
     case POPT_CALLBACK_REASON_OPTION:
         // Do stuff here.
-        cmdOptions.property_changes.push_back (cmdOptions.property_change);
+        if (opt->shortName == 'c') {
+            cmdOptions.constant_currents.push_back (cmdOptions.constant_current);
+        } else if (opt->shortName == 'p') {
+            cmdOptions.property_changes.push_back (cmdOptions.property_change);
+        }
         break;
     }
 }
@@ -137,6 +147,12 @@ int main (int argc, char * argv[])
          "Change a property. Provide an argument like \"Population:tau:45\". "
          "This option can be used multiple times."},
 
+        {"constant_current", 'c',
+         POPT_ARG_STRING, &(cmdOptions.constant_current), 0,
+         "Override the input current(s) with constant currents. Provide an "
+         "argument like \"Population:Port:45\". "
+         "This option can be used multiple times."},
+
         POPT_AUTOALIAS
         POPT_TABLEEND
     };
@@ -168,6 +184,13 @@ int main (int argc, char * argv[])
         while (pciter != cmdOptions.property_changes.end()) {
             // Add this "property change request" to the experiment.
             expt.addPropertyChangeRequest (*pciter);
+            ++pciter;
+        }
+
+        pciter = cmdOptions.constant_currents.begin();
+        while (pciter != cmdOptions.constant_currents.end()) {
+            // Add this "constant current request" to the experiment.
+            expt.addConstantCurrentRequest (*pciter);
             ++pciter;
         }
 

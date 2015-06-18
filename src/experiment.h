@@ -90,6 +90,13 @@ namespace spineml
         void addConstantCurrentRequest (const std::string& ccrequest);
 
         /*!
+         * Add a command-line specified time varying current request.
+         *
+         * Very similar to addConstantCurrentRequest.
+         */
+        void addTimeVaryingCurrentRequest (const std::string& tvcrequest);
+
+        /*!
          * This actually does the work of inserting a new
          * Configuration node to the experiment's Model node. Its
          * passed a vector of 3 elements: target population, target
@@ -99,7 +106,15 @@ namespace spineml
         void insertModelConfig (rapidxml::xml_node<>* property_node,
                                 const std::vector<std::string>& elements);
 
+        /*!
+         * Update or insert new ConstantCurrent node into the experiment xml
+         */
         void insertExptConstCurrent (const std::vector<std::string>& elements);
+
+        /*!
+         * Update or insert new TimeVaryingInput node into the experiment xml
+         */
+        void insertExptTimeVaryingCurrent (const std::vector<std::string>& elements);
 
         //! A simple accessor for this->modelDir.
         void setModelDir (const std::string& dir);

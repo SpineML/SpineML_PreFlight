@@ -62,8 +62,12 @@ struct CmdOptions {
     vector<string> property_changes;
     //! To hold the current constant current option string. Used temporarily by the constant current option (-c).
     char * constant_current;
+    //! To hold the time varying current option string. Used temporarily by the time varying current option (-t).
+    char * tvarying_current;
     //! To hold a list of all constant currents requested by the user
     vector<string> constant_currents;
+    //! To hold a list of all time varying currents requested by the user
+    vector<string> tvarying_currents;
 };
 
 /*!
@@ -75,6 +79,10 @@ void zeroCmdOptions (CmdOptions* copts)
     copts->backup_model = 0;
     copts->property_change = NULL;
     copts->property_changes.clear();
+    copts->constant_current=NULL;
+    copts->constant_currents.clear();
+    copts->tvarying_current=NULL;
+    copts->tvarying_currents.clear();
 }
 
 /*
@@ -111,6 +119,8 @@ void property_change_callback (poptContext con,
             cmdOptions.constant_currents.push_back (cmdOptions.constant_current);
         } else if (opt->shortName == 'p') {
             cmdOptions.property_changes.push_back (cmdOptions.property_change);
+        } else if (opt->shortName == 't') {
+            cmdOptions.tvarying_currents.push_back (cmdOptions.tvarying_current);
         }
         break;
     }
@@ -153,6 +163,14 @@ int main (int argc, char * argv[])
          "argument like \"Population:Port:45\". "
          "This option can be used multiple times."},
 
+        {"tvarying_current", 't',
+         POPT_ARG_STRING, &(cmdOptions.tvarying_current), 0,
+         "Override the input current(s) with time varying currents. Provide an "
+         "argument like \"Population:Port:0,0,100,150,300,0\". The comma separated "
+         "string of numbers is a set of time(ms)/current pairs. The example above "
+         "means start with 0 current, set it to 150 at time 100 ms and to 0 again at "
+         "time 300ms. This option can be used multiple times."},
+
         POPT_AUTOALIAS
         POPT_TABLEEND
     };
@@ -191,6 +209,13 @@ int main (int argc, char * argv[])
         while (pciter != cmdOptions.constant_currents.end()) {
             // Add this "constant current request" to the experiment.
             expt.addConstantCurrentRequest (*pciter);
+            ++pciter;
+        }
+
+        pciter = cmdOptions.tvarying_currents.begin();
+        while (pciter != cmdOptions.tvarying_currents.end()) {
+            // Add this "time varying current request" to the experiment.
+            expt.addTimeVaryingCurrentRequest (*pciter);
             ++pciter;
         }
 

@@ -25,11 +25,11 @@ If the user requests "property changes" via the command line, then
 this program also modifies the experiment.xml file, adding model
 configuration changes there.
 
-The dependency-free rapidxml header-only xml parser is used to read,
+The dependency-free, header-only xml parser _rapidxml_ is used to read,
 modify and write out XML files.
 
-This code depends on popt (libpopt-dev) for command line option
-parsing and on doxygen to build the code documentation.
+This code depends on _popt_ (the package may be named _libpopt-dev_ on your OS) for command line option
+parsing and on _doxygen_ to build the code documentation.
 
 Author: Seb James
 Licence: GNU GPL

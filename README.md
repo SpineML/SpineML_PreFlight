@@ -29,7 +29,7 @@ The dependency-free, header-only xml parser _rapidxml_ is used to read,
 modify and write out XML files.
 
 This code depends on _popt_ (the package may be named _libpopt-dev_ on your OS) for command line option
-parsing and on _doxygen_ to build the code documentation. The build system is _GNU autotools_.
+parsing and on _doxygen_ to build the code documentation. The build systems are _GNU autotools_ or _cmake_.
 
 ##Quick-start guide to compilation
 
@@ -47,7 +47,7 @@ sudo make install
 Alternative cmake-based build:
 
 ```bash
-sudo apt-get install build-essential autoconf doxygen libpopt-dev
+sudo apt-get install build-essential cmake doxygen libpopt-dev
 cd SpineML_PreFlight
 mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..

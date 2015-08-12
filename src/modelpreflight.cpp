@@ -364,7 +364,13 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
             // contain a OneToOneConnection or an AllToAllConnection
             // or a ConnectionList containing a BinaryFile with some
             // num_connections.
-            unsigned int num_connections = this->get_num_connections (syn_node, dstNum);
+            unsigned int srcNum = 0;
+            {
+                stringstream ss;
+                ss << src_num;
+                ss >> srcNum;
+            }
+            unsigned int num_connections = this->get_num_connections (syn_node, srcNum, dstNum);
             this->try_replace_statevar_property (prop_node, num_connections, wu_cmpt_name);
         }
     }
@@ -372,6 +378,7 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
 
 unsigned int
 ModelPreflight::get_num_connections (xml_node<>* synapse_node,
+                                     unsigned int num_in_src_population,
                                      unsigned int num_in_dst_population)
 {
     // Although there can also be FixedProbability and
@@ -387,7 +394,7 @@ ModelPreflight::get_num_connections (xml_node<>* synapse_node,
     if (onetoone_node) {
         rtn = num_in_dst_population;
     } else if (alltoall_node) {
-        rtn = num_in_dst_population * num_in_dst_population;
+        rtn = num_in_src_population * num_in_dst_population;
     } else if (conn_list_node) {
         xml_node<>* binaryfile_node = conn_list_node->first_node ("BinaryFile");
         if (binaryfile_node) {

@@ -405,12 +405,16 @@ namespace spineml
          *
          * @param synapse_node The \verbatim<LL:Synapse>\endverbatim
          *
+         * @param num_in_src_population The number of neurons in the
+         * source population from which this synapse projects.
+         *
          * @param num_in_dst_population The number of neurons in the
          * destination population to which this synapse projects.
          *
          * @return the number of connections.
          */
         unsigned int get_num_connections (rapidxml::xml_node<>* synapse_node,
+                                          unsigned int num_in_src_population,
                                           unsigned int num_in_dst_population);
 
     private:

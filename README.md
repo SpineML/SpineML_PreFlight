@@ -44,5 +44,17 @@ make -j4
 sudo make install
 ```
 
+Alternative cmake-based build:
+
+```bash
+sudo apt-get install build-essential autoconf doxygen libpopt-dev
+cd SpineML_PreFlight
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
+make -j4
+sudo make install
+```
+
+
 Author: Seb James
 Licence: GNU GPL

@@ -306,10 +306,16 @@ namespace spineml
                                         const std::string& dst_population);
 
         /*!
-         * Configure connection delays in @param cl using the delays specified in
-         * @param parent_node.
+         * Configure connection delays in @param cl using the delays
+         * specified in @param parent_node. This reads the <Delay>
+         * element from the XML into the ConnectionList object.
+         *
+         * @return true if a Delay element was found, false if the
+         * Delay element was not found.
+         *
+         * Throws exceptions on errors.
          */
-        void setup_connection_delays (rapidxml::xml_node<> *parent_node,
+        bool setup_connection_delays (rapidxml::xml_node<> *parent_node,
                                       spineml::ConnectionList& cl);
 
         /*!

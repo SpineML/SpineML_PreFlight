@@ -464,7 +464,12 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
     // Ok, no binary file, so convert.
     spineml::ConnectionList cl;
 
-    // Read XML to get each connection and insert this into ConnectionList.
+    // First see if we have a Delay element, and what
+    // that delay is, so that we can assign delays to the Connections.
+    bool have_delay_element = this->setup_connection_delays (connlist_node, cl);
+
+    // Read XML to get each connection and insert this into
+    // the ConnectionList object.
     int c_idx = 0; // Connection index
     int src, dst; float delay;
     xml_attribute<>* src_attr;
@@ -494,6 +499,10 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
             stringstream ss;
             ss << delay_attr->value();
             ss >> delay;
+        } else if (have_delay_element) {
+            // It's ok for a Connection not to have a delay attribute,
+            // but in that case, a ConnectionList needs to contain a
+            // Delay element.
         } else {
             throw runtime_error ("Failed to get delay, malformed XML.");
         }
@@ -506,6 +515,12 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
         cl.connectivityS2C[src].push_back (c_idx); // bad_alloc
         cl.connectivityC2D.push_back (dst);
         cl.connectivityC2Delay.push_back (delay);
+    }
+
+    // If the ConnectionList contained a Delay element, we have to
+    // generate the delays before writing the connection out.
+    if (have_delay_element) {
+        cl.generateDelays();
     }
 
     // Lastly, write these out:
@@ -577,13 +592,15 @@ ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
     this->write_connection_out (fixedprob_node, cl);
 }
 
-void
+bool
 ModelPreflight::setup_connection_delays (xml_node<>* parent_node, ConnectionList& cl)
 {
+    bool have_delay_element = false;
     // The connection list object which we'll populate.
     float dimMultiplier = 1.0;
     xml_node<>* delay_node = parent_node->first_node ("Delay");
     if (delay_node) {
+        have_delay_element = true;
         xml_attribute<>* dim_attr = delay_node->first_attribute ("Dimension");
         if (dim_attr) {
             cl.delayDimension = dim_attr->value();
@@ -660,6 +677,8 @@ ModelPreflight::setup_connection_delays (xml_node<>* parent_node, ConnectionList
             }
         }
     }
+
+    return have_delay_element;
 }
 
 void

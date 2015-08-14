@@ -275,10 +275,16 @@ ConnectionList::writeXml (xml_node<>* into_node,
     xml_attribute<>* num_connections_attr = thedoc->allocate_attribute ("num_connections", nc_alloced);
     // We're always going to explicitly list the delay for each connection:
     xml_attribute<>* explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay_flag", "1");
+    // "packed_data" is used by SpineCreator when reading
+    // SpineML. "packed_data" signifies that the data is not output
+    // using the Qt serialisation streams. We therefore add it here in
+    // all cases.
+    xml_attribute<>* packed_data_attr = thedoc->allocate_attribute ("packed_data", "true");
 
     binfile_node->append_attribute (file_name_attr);
     binfile_node->append_attribute (num_connections_attr);
     binfile_node->append_attribute (explicit_delay_attr);
+    binfile_node->append_attribute (packed_data_attr);
 
     into_node->prepend_node (binfile_node);
 }

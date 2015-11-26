@@ -10,5 +10,9 @@ target_link_libraries(spineml_preflight spinemlpreflight ${POPT_LIBRARY})
 add_executable(ebd_float2double ebd_float2double.cpp)
 target_link_libraries(ebd_float2double spinemlpreflight ${POPT_LIBRARY})
 
-install(PROGRAMS spineml_preflight ebd_float2double DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
+install(
+  PROGRAMS
+  ${CMAKE_CURRENT_BINARY_DIR}/spineml_preflight
+  ${CMAKE_CURRENT_BINARY_DIR}/ebd_float2double
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)

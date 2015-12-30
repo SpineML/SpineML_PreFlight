@@ -16,3 +16,6 @@ install(
   ${CMAKE_CURRENT_BINARY_DIR}/ebd_float2double
   DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
+
+install(FILES spineml_preflight.1 ebd_float2double.1 
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/man/man1)

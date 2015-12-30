@@ -1,0 +1,92 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2015 Sebastian Scott James <seb.james@sheffield.ac.uk>,
+.\"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH spineml_preflight 1 "December 30, 2015"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+spineml_preflight \- A pre-processor for SpineML models
+.SH SYNOPSIS
+.B spineml_preflight
+.RI [ options ]
+.br
+.SH DESCRIPTION
+.B spineml_preflight
+Simulator independent initial processing for SpineML models.
+
+This code takes a SpineML model, probably created in SpineCreator, and
+"preflights" it ready for the simulator.
+
+The program parses the SpineML model, updating any aspects of the
+model where parameters, weights or connectivity are specified in
+meta-form. For example, where connections are given in fixed
+probability form, this program creates a connection list file and
+modifies the xml element into a element with an associated binary
+connection list file.
+
+It also replaces those elements which are state variable initial
+values with explicit binary lists.
+
+The original model.xml file is optionally renamed model.xml.bu and a
+new model.xml file is written out containing the new, specific
+information.
+
+If the user requests "property changes" via the command line, then
+this program also modifies the experiment.xml file, adding model
+configuration changes there.
+.PP
+.SH OPTIONS
+spineml_preflight options are denoted as long options starting with
+two dashes (`-') or short options with a single dash.
+.TP
+.B \-e, \-\-expt_path=STRING
+Provide the path to the experiment.xml file for the model you wish to
+preflight.
+.TP
+.B \-b, \-\-backup_model
+If set, make a backup of model.xml as model.xml.bu.
+.TP
+.B \-p, \-\-property_change=STRING
+Change a property. Provide an argument like "Population:tau:45". This
+example would set the "tau" property of the population called
+"Population" to the value 45. This option can be used multiple times.
+.TP
+.B \-c, \-\-constant_current=STRING
+Override the input current(s) with constant currents. Provide an
+argument like "Population:Port:45". This example sets the "Port"
+current to the value 45 for the population called "Population". This
+option can be used multiple times.
+.TP
+.B \-t, \-\-tvarying_current=STRING
+Override the input current(s) with time varying currents. Provide an
+argument like "Population:Port:0,0,100,150,300,0". The comma separated
+string of numbers is a set of time(ms)/current pairs. The example
+above means start with 0 current, set it to 150 at time 100 ms and to
+0 again at time 300ms. This option can be used multiple times.
+.TP
+.B \-?, \-\-help
+Show a help message.
+.TP
+.B \-\-usage
+Show a brief usage message.
+.SH EXAMPLE
+spineml_prefight -e /path/to/temp_copy_of/model/experiment0.xml \\
+                 -p "Population:tau:45"
+.SH AUTHOR
+Seb James <seb.james@sheffield.ac.uk>
+.SH SEE ALSO
+.BR ebd_float2double (1),
+.br

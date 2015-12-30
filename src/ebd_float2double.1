@@ -1,0 +1,60 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2015 Sebastian Scott James <seb.james@sheffield.ac.uk>,
+.\"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH ebd_float2double 1 "December 30, 2015"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+ebd_float2double \- A utility for SpineML models
+.SH SYNOPSIS
+.B ebd_float2double
+.RI [ options ]
+.br
+.SH DESCRIPTION
+.B
+Float to double or double to float conversion for SpineML models.
+
+This code takes a SpineML model, probably created in SpineCreator, and
+converts connection lists from float format (which is now deprecated)
+to double format. It is only required if you have a model which was
+produced by an old version of SpineCreator. Almost no users will need
+to use this program and it will be removed from SpineML_PreFlight
+soon.
+.PP
+.SH OPTIONS
+ebd_float2double options are denoted as long options starting with
+two dashes (`-') or short options with a single dash.
+.TP
+.B \-e, \-\-model_path=STRING
+Provide the path to the model.xml file for the model you wish to
+update.
+.TP
+.B \-b, \-\-backwards
+If set, convert backwards from double to float, not forwards from
+float to double.
+.TP
+.B \-?, \-\-help
+Show a help message.
+.TP
+.B \-\-usage
+Show a brief usage message.
+.SH EXAMPLE
+ebd_float2double -e /path/to/model/model.xml
+.SH AUTHOR
+Seb James <seb.james@sheffield.ac.uk>
+.SH SEE ALSO
+.BR ebd_float2double (1),
+.br

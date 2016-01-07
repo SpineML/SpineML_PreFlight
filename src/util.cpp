@@ -146,7 +146,6 @@ Util::getValueWithDimension (const std::string& str)
     pair<double, string> rtn;
 
     // Add value to rtn.
-    double val(0.0);
     stringstream val_ss;
     val_ss << valstring;        ;
     val_ss >> rtn.first;

@@ -130,7 +130,6 @@ namespace spineml
 
             char* textpos = this->data_;
             std::string line("");
-            size_t curmem = 0; // current allocated memory count (chars)
             size_t llen = 0;   // line length (chars)
             size_t curpos = 0;
             while (getline (f, line)) {

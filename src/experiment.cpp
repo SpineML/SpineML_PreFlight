@@ -522,7 +522,7 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
         TimePointValue tpv;
         tpv.setTime (time);
         tpv.setValue (value);
-        xml_node<>* tpv_node = doc.allocate_node (node_element, "TimePointValue");
+        /*xml_node<>* tpv_node =*/ doc.allocate_node (node_element, "TimePointValue");
         // As we've not added prop_node to the document we have to
         // pass the document pointer here:
         tpv.writeXML (&doc, into_node);

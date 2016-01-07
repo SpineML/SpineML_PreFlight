@@ -13,7 +13,6 @@
 void rngDataInit (RngData* rd)
 {
     rd->seed = 0;
-    rd->jsr = 123456789;
     rd->qBinVal = -1;
 }
 
@@ -85,7 +84,6 @@ void zigset (RngData* rd, unsigned int jsrseed)
     double dn=3.442619855899,tn=dn,vn=9.91256303526217e-3, q;
     double de=7.697117470131487, te=de, ve=3.949659822581572e-3;
     int i;
-    rd->jsr=jsrseed;
 
     /* Tables for RNOR: */
     q=vn/exp(-.5*dn*dn);

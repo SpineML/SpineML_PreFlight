@@ -33,6 +33,7 @@
 
 #include <cstdlib>
 #include <cmath>
+#include <climits>
 #include <ctime>
 #include <sys/time.h>
 
@@ -52,8 +53,8 @@ struct RngData {
     // prefer to have in here.
     const static int a_RNG = 1103515245;
     const static int c_RNG = 12345;
-    int seed, hz;
-    unsigned int iz,jz,jsr,kn[128],ke[256];
+    unsigned int seed; int hz;
+    unsigned int iz,jz,kn[128],ke[256];
     float wn[128],fn[128], we[256],fe[256];
     float qBinVal,sBinVal,rBinVal,aBinVal;
 };
@@ -77,7 +78,7 @@ float uniformGCC(RngData* rd);
 // returns float:
 #define RNOR(rd) ((rd)->hz=SHR3(rd),                                    \
                   (rd)->iz=(rd)->hz&127,                                \
-                  (abs((rd)->hz) < (rd)->kn[(rd)->iz]) ? (rd)->hz*(rd)->wn[(rd)->iz] : nfix(rd))
+                  ((unsigned int)abs((rd)->hz) < (rd)->kn[(rd)->iz]) ? (rd)->hz*(rd)->wn[(rd)->iz] : nfix(rd))
 // returns float:
 #define REXP(rd) ((rd)->jz=SHR3(rd),                                    \
                   (rd)->iz=(rd)->jz&255,                                \

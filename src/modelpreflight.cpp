@@ -508,7 +508,7 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
         }
 
         // Ensure connectivityS2C is large enough for the sources.
-        if (src >= cl.connectivityS2C.size()) {
+        if (static_cast<unsigned int>(src) >= cl.connectivityS2C.size()) {
             cl.connectivityS2C.reserve(++src);
             cl.connectivityS2C.resize(src--);
         }

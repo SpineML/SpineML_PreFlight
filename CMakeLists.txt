@@ -12,6 +12,8 @@ set(CMAKE_C_FLAGS "-Wall")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/Modules)
 find_package(POPT REQUIRED)
 
+include_directories(${POPT_INCLUDE_DIR})
+
 # rapidxml is bundled in the source:
 include_directories ("${PROJECT_SOURCE_DIR}/include/rapidxml-1.13")
 

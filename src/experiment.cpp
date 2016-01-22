@@ -231,24 +231,31 @@ Experiment::addTimeVaryingCurrentRequest (const string& tvcrequest)
     vector<string> elements = Util::splitStringWithEncs (tvcrequest);
 
     // Now sanity check the elements.
-    if (elements.size() != 3) {
+    unsigned int numel = elements.size();
+    if (numel != 3 && numel != 4) {
         stringstream ee;
         ee << "Wrong number of elements in time varying current request.\n";
         if (elements.size() == 2) {
-            ee << "Two elements in time varying current request (expect 3):\n";
+            ee << "Two elements in time varying current request (expect 3 or 4):\n";
             ee << "Population/Projection: " << elements[0] << "\n";
             ee << "Port: " << elements[1] << "\n";
         } else if (elements.size() == 1) {
             ee << "One element in time varying current request (expect 3):\n";
             ee << "Population/Projection: " << elements[0] << "\n";
         } else {
-            ee << elements.size() << " elements in time varying current request (expect 3).\n";
+            ee << elements.size() << " elements in time varying current request (expect 3 or 4).\n";
         }
         throw runtime_error (ee.str());
     }
 
-    cout << "Preflight: Time varying current request: '" << elements[0]
-         << "'->'" << elements[1] << "' receives time/current list '" << elements[2] << "'\n";
+    if (numel == 3) {
+        cout << "Preflight: Time varying current request: '" << elements[0]
+             << "'->'" << elements[1] << "' receives time/current list '" << elements[2] << "'\n";
+    } else {
+        cout << "Preflight: Time varying current request: '" << elements[0]
+             << "'->'" << elements[1] << "' receives time/current list '" << elements[3]
+             << "' for population elements '" << elements[2] << "'\n";
+    }
 
     // We have the elements, can now insert a node into our
     // experiment.
@@ -366,8 +373,7 @@ Experiment::insertExptConstCurrent (const vector<string>& elements)
         throw runtime_error ("experiment XML: no Experiment node");
     }
 
-    // Need to replace or insert a ConstantInput node in
-    // expt_node.
+    // Need to replace or insert a ConstantInput node in expt_node.
 
     xml_node<>* into_node = static_cast<xml_node<>*>(0);
     // Go through each existing ConstantInput, if we find the one we
@@ -537,7 +543,13 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
     // At end, write out the xml.
     this->write (doc);
 }
-
+/* If we are told which index to put the arrays on, then we can create TimePointArrayValues:
+		<TimeVaryingArrayInput target="SC" port="in" name="Test">
+			<TimePointArrayValue index="0" array_time="0,100,300" array_value="0,2,0"/>
+			<TimePointArrayValue index="1" array_time="0" array_value="0"/>
+			<TimePointArrayValue index="2" array_time="0,200" array_value="0,1"/>
+		</TimeVaryingArrayInput>
+*/
 void
 Experiment::setModelDir (const string& dir)
 {

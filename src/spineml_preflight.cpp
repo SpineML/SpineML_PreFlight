@@ -169,7 +169,12 @@ int main (int argc, char * argv[])
          "argument like \"Population:Port:0,0,100,150,300,0\". The comma separated "
          "string of numbers is a set of time(ms)/current pairs. The example above "
          "means start with 0 current, set it to 150 at time 100 ms and to 0 again at "
-         "time 300ms. This option can be used multiple times."},
+         "time 300ms. If an additional list is provided, it is interpreted as the set "
+         "of elements in the population to which the time varying current should be "
+         "applied. An example would be: \"Population:Port:100,200:0,0,100,150,300,0\". "
+         "In this case, the given \"top hat\" shaped time varying current is injected "
+         "into the population elements with indices 100 and 200."
+         "This option can be used multiple times."},
 
         POPT_AUTOALIAS
         POPT_TABLEEND

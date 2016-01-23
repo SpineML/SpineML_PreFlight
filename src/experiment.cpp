@@ -17,6 +17,7 @@
 #include "modelpreflight.h"
 #include "fixedvalue.h"
 #include "timepointvalue.h"
+#include "timepointarrayvalue.h"
 #include "util.h"
 
 using namespace std;
@@ -455,14 +456,20 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
         throw runtime_error ("experiment XML: no Experiment node");
     }
 
+    unsigned int numel = elements.size();
+
     // Need to replace or insert a TimeVaryingInput node in expt_node.
 
     xml_node<>* into_node = static_cast<xml_node<>*>(0);
     // Go through each existing TimeVaryingInput, if we find the one we
     // want to replace, then copy the pointer into "into_node".
-    for (xml_node<>* ci_node = expt_node->first_node ("TimeVaryingInput");
+    string elementMatch = "TimeVaryingInput";
+    if (numel == 4) {
+        elementMatch = "TimeVaryingArrayInput";
+    }
+    for (xml_node<>* ci_node = expt_node->first_node (elementMatch.c_str());
          ci_node;
-         ci_node = ci_node->next_sibling ("TimeVaryingInput")) {
+         ci_node = ci_node->next_sibling (elementMatch.c_str())) {
         xml_attribute<>* targattr = ci_node->first_attribute ("target");
         if (targattr) {
             string target(targattr->value());
@@ -481,6 +488,106 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
         }
     }
 
+    bool created_node = false;
+    if (numel == 3) {
+        created_node = this->createTimeVaryingInputNode (into_node, elements, doc);
+    } else {
+        created_node = this->createTimeVaryingArrayInputNode (into_node, elements, doc);
+    }
+
+    // Now add the new ConstantInput node to the Experiment node node,
+    // if ConstantInput node was newly created.
+    if (created_node == true) {
+        expt_node->prepend_node (into_node);
+    }
+
+    // At end, write out the xml.
+    this->write (doc);
+}
+
+bool
+Experiment::createTimeVaryingArrayInputNode (xml_node<>* into_node,
+                                             const vector<string>& elements,
+                                             xml_document<>& doc)
+{
+    bool created_node (false);
+    if (!into_node) { // into_node will be a "TimeVaryingInput"
+        // Create into_node as it doesn't already exist.
+        into_node = doc.allocate_node (node_element, "TimeVaryingArrayInput");
+        created_node = true;
+    } // else existing matching configuration found
+
+    // 1. Remove any existing attributes and child nodes from into_node.
+    into_node->remove_all_attributes();
+    into_node->remove_all_nodes();
+    // 2. Add new target attribute
+    char* targstr_alloced = doc.allocate_string (elements[0].c_str());
+    xml_attribute<>* target_attr = doc.allocate_attribute ("target", targstr_alloced);
+    into_node->append_attribute (target_attr);
+
+    // 3. Add Port
+    char* portstr_alloced = doc.allocate_string (elements[1].c_str());
+    xml_attribute<>* port_attr = doc.allocate_attribute ("port", portstr_alloced);
+    into_node->append_attribute (port_attr);
+
+    // 4. Add name attribute (same value as port)
+    xml_attribute<>* name_attr = doc.allocate_attribute ("name", portstr_alloced);
+    into_node->append_attribute (name_attr);
+
+    // 5. Add TimePointValue element.
+    vector<string> pairs = Util::splitStringWithEncs (elements[2], string(","));
+    vector<string> arrayindices;
+    unsigned int numel = elements.size();
+    if (numel == 4) {
+        pairs = Util::splitStringWithEncs (elements[3], string(","));
+        arrayindices = Util::splitStringWithEncs (elements[2], string(","));
+    }
+    if (pairs.size()%2) {
+        throw runtime_error ("experiment XML: Need an even number of values "
+                             "in time varying current time/current list");
+    }
+
+    vector<string>::const_iterator pi = pairs.begin();
+    // Build up the array_time and array_value strings
+
+    stringstream timess;
+    stringstream valuess;
+    bool first = true;
+    while (pi != pairs.end()) {
+        // Read from cmd line option:
+        if (!first) {
+            timess << ",";
+        }
+        timess << *pi;
+        ++pi;
+        if (!first) {
+            valuess << ",";
+        } else {
+            first = false;
+        }
+        valuess << *pi;
+        ++pi;
+    }
+
+    vector<string>::const_iterator ai = arrayindices.begin();
+    while (ai != arrayindices.end()) {
+        TimePointArrayValue tpav;
+        tpav.setIndex (*ai);
+        tpav.setArrayTime (timess.str());
+        tpav.setArrayValue (valuess.str());
+        doc.allocate_node (node_element, "TimePointArrayValue");
+        tpav.writeXML (&doc, into_node);
+        ++ai;
+    }
+
+    return created_node;
+}
+
+bool
+Experiment::createTimeVaryingInputNode (xml_node<>* into_node,
+                                        const vector<string>& elements,
+                                        xml_document<>& doc)
+{
     bool created_node (false);
     if (!into_node) { // into_node will be a "TimeVaryingInput"
         // Create into_node as it doesn't already exist.
@@ -505,12 +612,13 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
     xml_attribute<>* name_attr = doc.allocate_attribute ("name", portstr_alloced);
     into_node->append_attribute (name_attr);
 
-    // 5. Add TimePointValue elements.
+    // 5. Add TimePointValue element.
     vector<string> pairs = Util::splitStringWithEncs (elements[2], string(","));
     if (pairs.size()%2) {
         throw runtime_error ("experiment XML: Need an even number of values "
                              "in time varying current time/current list");
     }
+
     vector<string>::const_iterator pi = pairs.begin();
     while (pi != pairs.end()) {
         // Read from cmd line option:
@@ -534,22 +642,9 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
         tpv.writeXML (&doc, into_node);
     }
 
-    // Now add the new ConstantInput node to the Experiment node node,
-    // if ConstantInput node was newly created.
-    if (created_node == true) {
-        expt_node->prepend_node (into_node);
-    }
-
-    // At end, write out the xml.
-    this->write (doc);
+    return created_node;
 }
-/* If we are told which index to put the arrays on, then we can create TimePointArrayValues:
-		<TimeVaryingArrayInput target="SC" port="in" name="Test">
-			<TimePointArrayValue index="0" array_time="0,100,300" array_value="0,2,0"/>
-			<TimePointArrayValue index="1" array_time="0" array_value="0"/>
-			<TimePointArrayValue index="2" array_time="0,200" array_value="0,1"/>
-		</TimeVaryingArrayInput>
-*/
+
 void
 Experiment::setModelDir (const string& dir)
 {

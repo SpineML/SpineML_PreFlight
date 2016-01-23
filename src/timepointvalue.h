@@ -66,4 +66,4 @@ namespace spineml
 
 } // namespace
 
-#endif // _FIXEDVALUE_H_
+#endif // _TIMEPOINTVALUE_H_

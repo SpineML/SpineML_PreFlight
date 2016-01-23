@@ -124,6 +124,18 @@ namespace spineml
         //! file.
         void write (const rapidxml::xml_document<>& the_doc);
 
+        //! Create a TimeVaryingInputNode in into_node, using the
+        //! information in elements.
+        bool createTimeVaryingInputNode (rapidxml::xml_node<>* into_node,
+                                         const std::vector<std::string>& elements,
+                                         rapidxml::xml_document<>& doc);
+
+        //! Create a TimeVaryingArrayInputNode in into_node, using the
+        //! information in elements.
+        bool createTimeVaryingArrayInputNode (rapidxml::xml_node<>* into_node,
+                                              const std::vector<std::string>& elements,
+                                              rapidxml::xml_document<>& doc);
+
         //! Path to the experiment xml file.
         std::string filepath;
 

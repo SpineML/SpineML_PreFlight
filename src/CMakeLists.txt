@@ -1,7 +1,7 @@
 add_library(spinemlpreflight STATIC
 component.cpp connection_list.cpp experiment.cpp fixedvalue.cpp
 modelpreflight.cpp normaldistribution.cpp propertycontent.cpp rng.cpp 
-timepointvalue.cpp uniformdistribution.cpp util.cpp valuelist.cpp
+timepointvalue.cpp timepointarrayvalue.cpp uniformdistribution.cpp util.cpp valuelist.cpp
 )
 
 add_executable(spineml_preflight spineml_preflight.cpp)

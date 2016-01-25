@@ -588,7 +588,6 @@ Experiment::createTimeVaryingArrayInputNode (xml_node<>*& into_node,
             nss << *ai;
             unsigned int aidx;
             nss >> aidx;
-            cerr << "Compare current index " << idx << " with cmd line index " << aidx << endl;
             if (aidx == idx) {
                 TimePointArrayValue tpav;
                 tpav.setIndex (*ai);

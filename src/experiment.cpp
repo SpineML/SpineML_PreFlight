@@ -506,12 +506,12 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
 }
 
 bool
-Experiment::createTimeVaryingArrayInputNode (xml_node<>* into_node,
+Experiment::createTimeVaryingArrayInputNode (xml_node<>*& into_node,
                                              const vector<string>& elements,
                                              xml_document<>& doc)
 {
     bool created_node (false);
-    if (!into_node) { // into_node will be a "TimeVaryingInput"
+    if (!into_node) { // into_node may be a "TimeVaryingArrayInput"
         // Create into_node as it doesn't already exist.
         into_node = doc.allocate_node (node_element, "TimeVaryingArrayInput");
         created_node = true;
@@ -584,7 +584,7 @@ Experiment::createTimeVaryingArrayInputNode (xml_node<>* into_node,
 }
 
 bool
-Experiment::createTimeVaryingInputNode (xml_node<>* into_node,
+Experiment::createTimeVaryingInputNode (xml_node<>*& into_node,
                                         const vector<string>& elements,
                                         xml_document<>& doc)
 {

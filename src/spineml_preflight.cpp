@@ -217,19 +217,24 @@ int main (int argc, char * argv[])
             ++pciter;
         }
 
-        pciter = cmdOptions.tvarying_currents.begin();
-        while (pciter != cmdOptions.tvarying_currents.end()) {
-            // Add this "time varying current request" to the experiment.
-            expt.addTimeVaryingCurrentRequest (*pciter);
-            ++pciter;
-        }
-
         // Get path from the expt above
         spineml::ModelPreflight model (model_dir, expt.modelUrl());
         if (cmdOptions.backup_model > 0) {
             model.backup = true;
         }
         model.preflight();
+
+        // We have to apply the timevarying current request AFTER
+        // preflighting the model, because we may need information
+        // from the model (such as the size of certain neuron
+        // populations).
+        pciter = cmdOptions.tvarying_currents.begin();
+        while (pciter != cmdOptions.tvarying_currents.end()) {
+            // Add this "time varying current request" to the experiment.
+            expt.addTimeVaryingCurrentRequest (*pciter, model);
+            ++pciter;
+        }
+
         // Write out the now modified xml:
         model.write();
         cout << "Preflight Finished.\n";

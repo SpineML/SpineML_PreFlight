@@ -226,7 +226,7 @@ Experiment::addConstantCurrentRequest (const string& ccrequest)
 }
 
 void
-Experiment::addTimeVaryingCurrentRequest (const string& tvcrequest)
+Experiment::addTimeVaryingCurrentRequest (const string& tvcrequest, const spineml::ModelPreflight& model)
 {
     // Looks like: "Population:port:value" where value is a scalar current
     vector<string> elements = Util::splitStringWithEncs (tvcrequest);
@@ -260,7 +260,7 @@ Experiment::addTimeVaryingCurrentRequest (const string& tvcrequest)
 
     // We have the elements, can now insert a node into our
     // experiment.
-    this->insertExptTimeVaryingCurrent (elements);
+    this->insertExptTimeVaryingCurrent (elements, model);
 }
 
 void
@@ -440,7 +440,8 @@ Experiment::insertExptConstCurrent (const vector<string>& elements)
 }
 
 void
-Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
+Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements,
+                                          const spineml::ModelPreflight& model)
 {
     xml_document<> doc;
     AllocAndRead ar(this->filepath);
@@ -492,7 +493,7 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
     if (numel == 3) {
         created_node = this->createTimeVaryingInputNode (into_node, elements, doc);
     } else {
-        created_node = this->createTimeVaryingArrayInputNode (into_node, elements, doc);
+        created_node = this->createTimeVaryingArrayInputNode (into_node, elements, doc, model);
     }
 
     // Now add the new ConstantInput node to the Experiment node node,
@@ -508,7 +509,8 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
 bool
 Experiment::createTimeVaryingArrayInputNode (xml_node<>*& into_node,
                                              const vector<string>& elements,
-                                             xml_document<>& doc)
+                                             xml_document<>& doc,
+                                             const spineml::ModelPreflight& model)
 {
     bool created_node (false);
     if (!into_node) { // into_node may be a "TimeVaryingArrayInput"
@@ -516,6 +518,9 @@ Experiment::createTimeVaryingArrayInputNode (xml_node<>*& into_node,
         into_node = doc.allocate_node (node_element, "TimeVaryingArrayInput");
         created_node = true;
     } // else existing matching configuration found
+
+    // 0. Find the size of the target population
+    unsigned int targetSize = model.findPopulationSize(elements[0]);
 
     // 1. Remove any existing attributes and child nodes from into_node.
     into_node->remove_all_attributes();
@@ -569,15 +574,41 @@ Experiment::createTimeVaryingArrayInputNode (xml_node<>*& into_node,
         ++pi;
     }
 
-    vector<string>::const_iterator ai = arrayindices.begin();
-    while (ai != arrayindices.end()) {
-        TimePointArrayValue tpav;
-        tpav.setIndex (*ai);
-        tpav.setArrayTime (timess.str());
-        tpav.setArrayValue (valuess.str());
-        doc.allocate_node (node_element, "TimePointArrayValue");
-        tpav.writeXML (&doc, into_node);
-        ++ai;
+    // Do we know here how many elements in the population? Should be
+    // able to figure it out from model.xml but that's going to be a
+    // pain. For investigatory purposes, lets hardcode 2500.
+    for (unsigned int idx = 0; idx < targetSize; ++idx) {
+
+        bool non_zero_idx = false;
+
+        // See if this is one of our non-zero indices:
+        vector<string>::const_iterator ai = arrayindices.begin();
+        while (ai != arrayindices.end()) {
+            stringstream nss;
+            nss << *ai;
+            unsigned int aidx;
+            nss >> aidx;
+            cerr << "Compare current index " << idx << " with cmd line index " << aidx << endl;
+            if (aidx == idx) {
+                TimePointArrayValue tpav;
+                tpav.setIndex (*ai);
+                tpav.setArrayTime (timess.str());
+                tpav.setArrayValue (valuess.str());
+                doc.allocate_node (node_element, "TimePointArrayValue");
+                tpav.writeXML (&doc, into_node);
+                non_zero_idx = true;
+            }
+            ++ai;
+        }
+
+        if (!non_zero_idx) {
+            TimePointArrayValue tpav;
+            tpav.setIndex (idx);
+            tpav.setArrayTime ("0");
+            tpav.setArrayValue ("0");
+            doc.allocate_node (node_element, "TimePointArrayValue");
+            tpav.writeXML (&doc, into_node);
+        }
     }
 
     return created_node;

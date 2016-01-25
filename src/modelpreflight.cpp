@@ -692,6 +692,55 @@ ModelPreflight::write_connection_out (xml_node<>* parent_node, ConnectionList& c
     cl.write (parent_node, this->modeldir, binfilepath);
 }
 
+unsigned int
+ModelPreflight::findPopulationSize (const std::string& containerName) const
+{
+    unsigned int rtn = 0;
+
+    // Set true when we find the "size" attribute of the relevant
+    // Neuron population to break out of the for loops.
+    bool foundSize = false;
+
+    xml_node<>* current_node = this->root_node;
+    // Search through all "Population" children of root node. For each
+    // one, find inside it a Neuron element. If the Neuron element
+    // matches containerName, then return the size attribute.
+    xml_node<>* popn_node;
+    for (popn_node = current_node->first_node();
+         popn_node && !foundSize;
+         popn_node = popn_node->next_sibling()) {
+        string pname = popn_node->name();
+        if (pname == "LL:Population" || pname == "HL:Population") {
+            // It's a population, search for Neuron therein.
+            xml_node<>* neuron_node;
+            for (neuron_node = popn_node->first_node();
+                 neuron_node && !foundSize;
+                 neuron_node = neuron_node->next_sibling()) {
+                string nname = neuron_node->name();
+                if (nname == "LL:Neuron" || pname == "HL:Neuron") {
+                    // We have a neuron node.
+                    xml_attribute<>* nattr = neuron_node->first_attribute("name");
+                    string neuronName("");
+                    if (nattr) {
+                        neuronName = nattr->value();
+                    }
+                    if (neuronName == containerName) {
+                        xml_attribute<>* sattr = neuron_node->first_attribute("size");
+                        if (sattr) {
+                            stringstream nss;
+                            nss << sattr->value();
+                            nss >> rtn;
+                            foundSize = true;
+                        }
+                    }
+                }
+            }
+        } // else move on to the next one.
+    }
+
+    return rtn;
+}
+
 #define STRLEN_PROPERTY 8
 xml_node<>*
 ModelPreflight::findProperty (xml_node<>* current_node,
@@ -717,7 +766,7 @@ ModelPreflight::findProperty (xml_node<>* current_node,
     if (current_node->name_size() == STRLEN_PROPERTY && cname == "Property") {
         // This node is a Property. Does the name of the parent match?
         if (parentName == containerName) {
-            // Yes, matches. does name attribute of this Property match propertyName?q
+            // Yes, matches. does name attribute of this Property match propertyName?
             if (!nattr) {
                 // no match, we don't have a property name attribute.
             } else {

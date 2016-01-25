@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <utility>
 #include "rapidxml.hpp"
+#include "modelpreflight.h"
 
 namespace spineml
 {
@@ -94,7 +95,8 @@ namespace spineml
          *
          * Very similar to addConstantCurrentRequest.
          */
-        void addTimeVaryingCurrentRequest (const std::string& tvcrequest);
+        void addTimeVaryingCurrentRequest (const std::string& tvcrequest,
+                                           const spineml::ModelPreflight& model);
 
         /*!
          * This actually does the work of inserting a new
@@ -114,7 +116,8 @@ namespace spineml
         /*!
          * Update or insert new TimeVaryingInput node into the experiment xml
          */
-        void insertExptTimeVaryingCurrent (const std::vector<std::string>& elements);
+        void insertExptTimeVaryingCurrent (const std::vector<std::string>& elements,
+                                           const spineml::ModelPreflight& model);
 
         //! A simple accessor for this->modelDir.
         void setModelDir (const std::string& dir);
@@ -134,7 +137,8 @@ namespace spineml
         //! information in elements.
         bool createTimeVaryingArrayInputNode (rapidxml::xml_node<>*& into_node,
                                               const std::vector<std::string>& elements,
-                                              rapidxml::xml_document<>& doc);
+                                              rapidxml::xml_document<>& doc,
+                                              const spineml::ModelPreflight& model);
 
         //! Path to the experiment xml file.
         std::string filepath;

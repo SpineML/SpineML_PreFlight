@@ -64,6 +64,16 @@ namespace spineml
         void preflight (void);
 
         /*!
+         * Find a Neuron population named @param containerName. Return
+         * the size of the population - the Neuron container's size
+         * attribute.
+         *
+         * @param containerName The name attribute of the container of
+         * the property we're searching for.
+         */
+        unsigned int findPopulationSize (const std::string& containerName) const;
+
+        /*!
          * Find a property called @param propertyName in, for example,
          * a Neuron population named @param containerName Return
          * pointer to the node if found, null pointer if not. The

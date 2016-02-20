@@ -227,6 +227,36 @@ namespace spineml
                                 const std::string& dst_population);
 
         /*!
+         * Preflight a raw input in the model. Something looking like
+         * this example, in which a population called Target connects
+         * with a fixed probability connection to a population
+         * "ToHCC":
+         *
+         *  <LL:Population>
+         *    <LL:Neuron name="ToHCC" size="2" url="diffx.xml">
+         *      <LL:Input src="Target" src_port="out" dst_port="xtargs">
+         *        <FixedProbabilityConnection probability="0.11" seed="123">
+         *          <Delay Dimension="ms">
+         *            <FixedValue value="0"/>
+         *          </Delay>
+         *        </FixedProbabilityConnection>
+         *      </LL:Input>
+         *    </LL:Neuron>
+         *    <Layout url="none.xml" seed="123" minimum_distance="0"/>
+         *  </LL:Population>
+         *  <LL:Population>
+         *    <LL:Neuron name="Target" size="2" url="passthroughnb.xml"/>
+         *    <Layout url="none.xml" seed="123" minimum_distance="0"/>
+         *  </LL:Population>
+         *
+         * @param input_node The <Input> node. This gives the number of members in the
+         * source population.
+         *
+         * @param dest_num The number of members in the destination population.
+         */
+        void preflight_input (rapidxml::xml_node<>* input_node, const std::string& dest_num);
+
+        /*!
          * Do the work of replacing a FixedProbability connection with a
          * ConnectionList
          *
@@ -257,16 +287,12 @@ namespace spineml
          *
          * @param fixedprob_node The FixedProbabilityConnection node to replace.
          *
-         * @param src_name The source population.
-         *
          * @param src_num The number of members in the source population.
          *
-         * @param dst_population The destination population for the synapse.
+         * @param dst_num The number of members in the destination population.
          */
         void replace_fixedprob_connection (rapidxml::xml_node<>* fixedprob_node,
-                                           const std::string& src_name,
-                                           const std::string& src_num,
-                                           const std::string& dst_population);
+                                           const std::string& src_num, const std::string& dst_num);
 
         /*!
          * Do the work of replacing an XML-only ConnectionList connection with a
@@ -293,17 +319,8 @@ namespace spineml
          * \endverbatim
          *
          * @param connlist_node The ConnectionList node to update.
-         *
-         * @param src_name The source population.
-         *
-         * @param src_num The number of members in the source population.
-         *
-         * @param dst_population The destination population for the synapse.
          */
-        void connection_list_to_binary (rapidxml::xml_node<> *connlist_node,
-                                        const std::string& src_name,
-                                        const std::string& src_num,
-                                        const std::string& dst_population);
+        void connection_list_to_binary (rapidxml::xml_node<> *connlist_node);
 
         /*!
          * Configure connection delays in @param cl using the delays

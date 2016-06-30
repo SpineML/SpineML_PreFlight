@@ -231,7 +231,7 @@ Experiment::addTimeVaryingCurrentRequest (const string& tvcrequest)
     vector<string> elements = Util::splitStringWithEncs (tvcrequest);
 
     // Now sanity check the elements.
-    if (elements.size() != 3) {
+    if (elements.size() != 3 && elements.size()!= 4) {
         stringstream ee;
         ee << "Wrong number of elements in time varying current request.\n";
         if (elements.size() == 2) {
@@ -247,9 +247,14 @@ Experiment::addTimeVaryingCurrentRequest (const string& tvcrequest)
         throw runtime_error (ee.str());
     }
 
-    cout << "Preflight: Time varying current request: '" << elements[0]
-         << "'->'" << elements[1] << "' receives time/current list '" << elements[2] << "'\n";
+    if (elements.size() == 4) {
+        cout << "Preflight: Time varying spike input request: '" << elements[0]
+             << "'->'" << elements[1] << "' receives " << elements[2] <<  " time/current list '" << elements[3] << "'\n";
 
+    } else {
+        cout << "Preflight: Time varying current request: '" << elements[0]
+             << "'->'" << elements[1] << "' receives time/current list '" << elements[2] << "'\n";
+    }
     // We have the elements, can now insert a node into our
     // experiment.
     this->insertExptTimeVaryingCurrent (elements);
@@ -499,8 +504,15 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
     xml_attribute<>* name_attr = doc.allocate_attribute ("name", portstr_alloced);
     into_node->append_attribute (name_attr);
 
+    // 4.5 If necessary add the spike train rng distribution
+    if (elements.size() == 4) {
+        char* diststr_alloced = doc.allocate_string (elements[2].c_str());
+        xml_attribute<>* dist_attr = doc.allocate_attribute ("rate_based_input", diststr_alloced);
+        into_node->append_attribute (dist_attr);    
+    }
+
     // 5. Add TimePointValue elements.
-    vector<string> pairs = Util::splitStringWithEncs (elements[2], string(","));
+    vector<string> pairs = Util::splitStringWithEncs (elements[elements.size()-1], string(","));
     if (pairs.size()%2) {
         throw runtime_error ("experiment XML: Need an even number of values "
                              "in time varying current time/current list");

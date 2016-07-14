@@ -10,6 +10,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include "rapidxml.hpp"
 #include "allocandread.h"
 #include "component.h"
@@ -62,6 +63,13 @@ namespace spineml
          * modify in this preflight process.
          */
         void preflight (void);
+
+        /*!
+         * Get the set of components used in the model. Used with the
+         * command line option to get the list of components in the
+         * model.
+         */
+        std::set<std::string> get_component_set (void);
 
         /*!
          * Find a property called @param propertyName in, for example,
@@ -136,6 +144,12 @@ namespace spineml
          * population.
          */
         int find_num_neurons (const std::string& dst_population);
+
+        /*!
+         * Given the population node, just get the name of the
+         * component used by that population.
+         */
+        std::string get_population_component_name (rapidxml::xml_node<>* pop_node);
 
         /*!
          * Take a population node, and process this for any changes we need to

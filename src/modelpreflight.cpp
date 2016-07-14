@@ -102,6 +102,25 @@ ModelPreflight::preflight (void)
     }
 }
 
+set<string>
+ModelPreflight::get_component_set (void)
+{
+    set<string> component_list;
+    this->init();
+    // Search each population for stuff.
+    this->first_pop_node = this->root_node->first_node(LVL"Population");
+    xml_node<>* pop_node = this->first_pop_node;
+    for (pop_node = this->root_node->first_node(LVL"Population");
+         pop_node;
+         pop_node = pop_node->next_sibling(LVL"Population")) {
+        string pname = this->get_population_component_name (pop_node);
+        if (!pname.empty()) {
+            component_list.insert(pname);
+        }
+    }
+    return component_list;
+}
+
 int
 ModelPreflight::find_num_neurons (const string& dst_population)
 {
@@ -134,6 +153,17 @@ ModelPreflight::find_num_neurons (const string& dst_population)
         pop_node = pop_node->next_sibling(LVL"Population");
     }
     return numNeurons;
+}
+
+string
+ModelPreflight::get_population_component_name (xml_node<>* pop_node)
+{
+    string c_name("");
+    xml_node<>* neuron_node = pop_node->first_node(LVL"Neuron");
+    if (neuron_node) {
+        c_name = this->get_component_name (neuron_node);
+    }
+    return c_name;
 }
 
 void

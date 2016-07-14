@@ -56,6 +56,8 @@ struct CmdOptions {
     char * expt_path;
     //! To hold a flag to say whether the model.xml file should be backed up before being modified. The -b option.
     int backup_model;
+    //! To take the option to list components used in the model
+    int list_components;
     //! To hold the current property change option string. Used temporarily by the property change option (-p).
     char * property_change;
     //! To hold a list of all property changes requested by the user
@@ -147,6 +149,10 @@ int main (int argc, char * argv[])
          POPT_ARG_NONE, &(cmdOptions.backup_model), 0,
          "If set, make a backup of model.xml as model.xml.bu."},
 
+        {"list_components", 'l',
+         POPT_ARG_NONE, &(cmdOptions.list_components), 0,
+         "If set, list the components of the model, one per line on stdout."},
+
         // options following this will cause the callback to be executed.
         { "callback", '\0',
           POPT_ARG_CALLBACK|POPT_ARGFLAG_DOC_HIDDEN, (void*)&property_change_callback, 0,
@@ -224,12 +230,21 @@ int main (int argc, char * argv[])
         if (cmdOptions.backup_model > 0) {
             model.backup = true;
         }
-        model.preflight();
-        // Write out the now modified xml:
-        model.write();
-        cout << "Preflight Finished.\n";
+        if (cmdOptions.list_components > 0) {
+            set<string> clist = model.get_component_set();
+            set<string>::const_iterator clisti = clist.begin();
+            while (clisti != clist.end()) {
+                cout << *clisti << endl;
+                ++clisti;
+            }
+        } else {
+            model.preflight();
+            // Write out the now modified xml:
+            model.write();
+            cout << "Preflight Finished.\n";
+        }
     } catch (const exception& e) {
-        cout << "Preflight Error: " << e.what() << endl;
+        cerr << "Preflight Error: " << e.what() << endl;
         rtn = -1;
     }
 

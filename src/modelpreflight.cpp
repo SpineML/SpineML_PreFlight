@@ -179,29 +179,29 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
     }
 
     // Get the name of the population.
-    string src_name("");
+    string pop_name("");
     xml_attribute<>* name_attr;
     if ((name_attr = neuron_node->first_attribute ("name"))) {
-        src_name = name_attr->value();
+        pop_name = name_attr->value();
     } // else failed to get src name
-
-    // Output some info to stdout
-    cout << "Preflight: processing population: '" << src_name << "'\n";
 
     // Now get the component name - this is user specified and there
     // should be an XML file associated with the component with this
     // name + .xml
     string c_name = this->get_component_name (neuron_node);
 
-    string src_num("");
-    unsigned int src_number(0);
+    string pop_num("");
+    unsigned int pop_number(0);
     xml_attribute<>* num_attr;
     if ((num_attr = neuron_node->first_attribute ("size"))) {
-        src_num = num_attr->value();
-        stringstream src_num_ss;
-        src_num_ss << src_num;
-        src_num_ss >> src_number;
+        pop_num = num_attr->value();
+        stringstream pop_num_ss;
+        pop_num_ss << pop_num;
+        pop_num_ss >> pop_number;
     } // else failed to get src num
+
+    // Output some info to stdout
+    cout << "Preflight: processing population: '" << pop_name << "' (size " << pop_num << ")\n";
 
     // Now find all Projections out from the neuron and expand any
     // connections into explicit lists, as
@@ -210,12 +210,24 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
     for (xml_node<>* proj_node = pop_node->first_node(LVL"Projection");
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
-        preflight_projection (proj_node, src_name, src_num);
+        // pop_name and pop_num are "src_name" and "src_num" for projections.
+        preflight_projection (proj_node, pop_name, pop_num);
+    }
+
+    // Now do a similar thing for connections which are not projections.
+    for (xml_node<>* input_node = neuron_node->first_node(LVL"Input");
+         input_node;
+         input_node = input_node->next_sibling(LVL"Input")) {
+        // A difference here is that pop_name and pop_num are the "dest_name" and
+        // "dst_num", because the <Input> element sits inside the DESTINATION population,
+        // whereas Projection elements sit inside the source population. The source
+        // population can be found from the Input attribute "src".
+        cout << "preflight_input for current name/num: " << pop_name << "," << pop_num << "\n";
+        preflight_input (input_node, pop_num);
     }
 
     if (c_name == "SpikeSource") {
-        // No statevar properties to change in the special neuron type
-        // "SpikeSource"
+        // No statevar properties to change in the special neuron type "SpikeSource"
         return;
     }
 
@@ -225,7 +237,7 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
     for (xml_node<>* prop_node = neuron_node->first_node("Property");
          prop_node;
          prop_node = prop_node->next_sibling("Property")) {
-        this->try_replace_statevar_property (prop_node, src_number, c_name);
+        this->try_replace_statevar_property (prop_node, pop_number, c_name);
     }
 }
 
@@ -344,6 +356,39 @@ ModelPreflight::preflight_projection (xml_node<>* proj_node,
 }
 
 void
+ModelPreflight::preflight_input (xml_node<>* input_node, const string& dest_num)
+{
+    string src_name("");
+    xml_attribute<>* src_name_attr;
+    if ((src_name_attr = input_node->first_attribute ("src"))) {
+        src_name = src_name_attr->value();
+    } // else failed to get src nane
+
+    // Now just replace any FixedProbability or ConnectionList nodes.
+    xml_node<>* fixedprob_connection = input_node->first_node("FixedProbabilityConnection");
+    xml_node<>* connection_list = input_node->first_node("ConnectionList");
+    if (fixedprob_connection) {
+        // Find the number of neurons in the destination population
+        int srcNum_ = this->find_num_neurons (src_name);
+        string src_num("");
+        if (srcNum_ != -1) {
+            stringstream ss;
+            ss << srcNum_;
+            src_num = ss.str();
+        } else {
+            stringstream ee;
+            ee << "Failed to find the number of neurons in the src population '"
+               << src_name << "'";
+            throw runtime_error (ee.str());
+        }
+        replace_fixedprob_connection (fixedprob_connection, src_num, dest_num);
+    } else if (connection_list) {
+        // Check if it's already binary, if not, expand.
+        connection_list_to_binary (connection_list);
+    }
+}
+
+void
 ModelPreflight::preflight_synapse (xml_node<>* syn_node,
                                    const string& src_name,
                                    const string& src_num,
@@ -353,10 +398,23 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
     xml_node<>* fixedprob_connection = syn_node->first_node("FixedProbabilityConnection");
     xml_node<>* connection_list = syn_node->first_node("ConnectionList");
     if (fixedprob_connection) {
-        replace_fixedprob_connection (fixedprob_connection, src_name, src_num, dst_population);
+        // Find the number of neurons in the destination population
+        int dstNum_ = this->find_num_neurons (dst_population);
+        string dst_num("");
+        if (dstNum_ != -1) {
+            stringstream ss;
+            ss << dstNum_;
+            dst_num = ss.str();
+        } else {
+            stringstream ee;
+            ee << "Failed to find the number of neurons in the destination population '"
+               << dst_population << "'";
+            throw runtime_error (ee.str());
+        }
+        replace_fixedprob_connection (fixedprob_connection, src_num, dst_num);
     } else if (connection_list) {
         // Check if it's already binary, if not, expand.
-        connection_list_to_binary (connection_list, src_name, src_num, dst_population);
+        connection_list_to_binary (connection_list);
     }
 
     int dstNum_ = this->find_num_neurons (dst_population);
@@ -480,10 +538,7 @@ ModelPreflight::get_component_name (xml_node<>* component_node)
 }
 
 void
-ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
-                                           const string& src_name,
-                                           const string& src_num,
-                                           const string& dst_population)
+ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node)
 {
     xml_node<>* binaryfile = connlist_node->first_node("BinaryFile");
     if (binaryfile) {
@@ -559,11 +614,9 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
 
 void
 ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
-                                              const string& src_name,
-                                              const string& src_num,
-                                              const string& dst_population)
+                                              const string& src_num, const string& dst_num)
 {
-    // Get the FixedProbability probabilty and seed from this bit of the model.xml:
+    // Get the FixedProbability probability and seed from this bit of the model.xml:
     // <FixedProbabilityConnection probability="0.11" seed="123">
     float probabilityValue = 0;
     {
@@ -604,16 +657,11 @@ ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
         ss << src_num;
         ss >> srcNum;
     }
-
-    // Find the number of neurons in the destination population
-    int dstNum_ = this->find_num_neurons (dst_population);
-    unsigned int dstNum(0);
-    if (dstNum_ != -1) {
-        dstNum = static_cast<unsigned int>(dstNum_);
-    } else {
-        stringstream ee;
-        ee << "Failed to find the number of neurons in the destination population '" << dst_population << "'";
-        throw runtime_error (ee.str());
+    unsigned int dstNum = 0;
+    {
+        stringstream ss;
+        ss << dst_num;
+        ss >> dstNum;
     }
 
     cl.generateFixedProbability (seed, probabilityValue, srcNum, dstNum);

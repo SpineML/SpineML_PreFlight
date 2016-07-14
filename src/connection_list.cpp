@@ -94,7 +94,11 @@ ConnectionList::generateFixedProbability (const int& seed, const float& probabil
     //
     // Here, I've reproduced the exact behaviour of
     // SpineML_2_BRAHMS_CL_weight.xsl around line 271
-    int zigset_seed = 0;
+    //
+    // Update: 20160220. This must have been implemented (the extra
+    // "1") to get around the problem that a zero seed is INCOMPATIBLE
+    // with the rng.h code.
+    int zigset_seed = 0; // BAD, but gets updated.
     {
         stringstream seed_ss;
         seed_ss << "1" << seed; // "1" then the seed. So for seed=123, we pass 1123 to zigset_seed.

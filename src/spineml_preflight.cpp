@@ -58,6 +58,8 @@ struct CmdOptions {
     int backup_model;
     //! To take the option to list components used in the model
     int list_components;
+    //! To take the option to show the model file name
+    int show_model_file;
     //! To hold the current property change option string. Used temporarily by the property change option (-p).
     char * property_change;
     //! To hold a list of all property changes requested by the user
@@ -153,6 +155,10 @@ int main (int argc, char * argv[])
          POPT_ARG_NONE, &(cmdOptions.list_components), 0,
          "If set, list the components of the model, one per line on stdout."},
 
+        {"show_model_file", 's',
+         POPT_ARG_NONE, &(cmdOptions.show_model_file), 0,
+         "If set, list the name of the network layer file on stdout (often called model.xml)."},
+
         // options following this will cause the callback to be executed.
         { "callback", '\0',
           POPT_ARG_CALLBACK|POPT_ARGFLAG_DOC_HIDDEN, (void*)&property_change_callback, 0,
@@ -230,12 +236,17 @@ int main (int argc, char * argv[])
         if (cmdOptions.backup_model > 0) {
             model.backup = true;
         }
-        if (cmdOptions.list_components > 0) {
-            set<string> clist = model.get_component_set();
-            set<string>::const_iterator clisti = clist.begin();
-            while (clisti != clist.end()) {
-                cout << *clisti << endl;
-                ++clisti;
+        if (cmdOptions.list_components > 0 || cmdOptions.show_model_file > 0) {
+            if (cmdOptions.list_components > 0) {
+                set<string> clist = model.get_component_set();
+                set<string>::const_iterator clisti = clist.begin();
+                while (clisti != clist.end()) {
+                    cout << *clisti << endl;
+                    ++clisti;
+                }
+            }
+            if (cmdOptions.show_model_file > 0) {
+                cout << expt.modelUrl() << endl;
             }
         } else {
             model.preflight();

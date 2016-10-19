@@ -181,7 +181,17 @@ int main (int argc, char * argv[])
          "argument like \"Population:Port:0,0,100,150,300,0\". The comma separated "
          "string of numbers is a set of time(ms)/current pairs. The example above "
          "means start with 0 current, set it to 150 at time 100 ms and to 0 again at "
-         "time 300ms. This option can be used multiple times."},
+         "time 300ms. If the input should be a spiking input, then add the "
+         "spike train distribution to the specification; something like "
+         "\"Population:Port:poisson:0,0,100,150,300,0\". The distribution could be "
+         "\"poisson\" or \"uniform\" - it is the presence of this distribution which "
+         "tells spineml_preflight that you want spiking inputs. "
+         // Uncomment this when the feature is implemented:
+         //"For an array of time "
+         //"varying inputs, add additional arrays to the list, using a semi-colon to "
+         //"separate: \"Population:Port:poisson:0,0,100,150,300,0;0,100,300,300,0\" or "
+         //"\"Population:Port:0,0,100,150,300,0;0,100,300,300,0\" for a non-spiking input. "
+         "This option can be used multiple times."},
 
         POPT_AUTOALIAS
         POPT_TABLEEND

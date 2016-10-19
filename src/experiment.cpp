@@ -508,7 +508,7 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
     if (elements.size() == 4) {
         char* diststr_alloced = doc.allocate_string (elements[2].c_str());
         xml_attribute<>* dist_attr = doc.allocate_attribute ("rate_based_input", diststr_alloced);
-        into_node->append_attribute (dist_attr);    
+        into_node->append_attribute (dist_attr);
     }
 
     // 5. Add TimePointValue elements.
@@ -540,8 +540,8 @@ Experiment::insertExptTimeVaryingCurrent (const vector<string>& elements)
         tpv.writeXML (&doc, into_node);
     }
 
-    // Now add the new ConstantInput node to the Experiment node node,
-    // if ConstantInput node was newly created.
+    // Now add the new TimeVaryingInput node to the Experiment node,
+    // if TimeVaryingInput node was newly created.
     if (created_node == true) {
         expt_node->prepend_node (into_node);
     }

@@ -828,6 +828,158 @@ ModelPreflight::findProperty (xml_node<>* current_node,
     return rtn;
 }
 
+rapidxml::xml_node<>*
+ModelPreflight::findNamedElement (rapidxml::xml_node<>* current_node, std::string& elementName)
+{
+    xml_node<>* rtn = static_cast<xml_node<>*>(0);
+    if (current_node == rtn /* i.e. static_cast<xml_node<>*>(0) */) {
+        current_node = this->root_node;
+    }
+    string cname = current_node->name();
+    if (current_node->name_size() == elementName.size() && cname == elementName) {
+        // Match
+        rtn = current_node;
+    } else {
+        // Not a match, so search down then sideways
+        xml_node<>* next_node;
+        for (next_node = current_node->first_node(); next_node; next_node = next_node->next_sibling()) {
+            if ((rtn = this->findNamedElement (next_node, elementName)) != static_cast<xml_node<>*>(0)) {
+                break; // found elementName
+            }
+        }
+    }
+    return rtn;
+}
+
+rapidxml::xml_node<>*
+ModelPreflight::findNamedParent (rapidxml::xml_node<>* current_node, std::string& elementName)
+{
+    xml_node<>* rtn = static_cast<xml_node<>*>(0);
+    if (current_node == rtn /* i.e. static_cast<xml_node<>*>(0) */) {
+        current_node = this->root_node;
+    }
+    string cname = current_node->name();
+    if (current_node->name_size() == elementName.size() && cname == elementName) {
+        // Match
+        rtn = current_node;
+    } else {
+        // Not a match, so search up.
+        if ((rtn = this->findNamedParent (current_node->parent(), elementName)) != static_cast<xml_node<>*>(0)) {
+            // found elementName
+        }
+    }
+    return rtn;
+}
+
+#define STRLEN_LLINPUT 8
+rapidxml::xml_node<>*
+ModelPreflight::findLLInput (rapidxml::xml_node<>* current_node,
+                             const std::string& parentName,
+                             const std::string& src,
+                             const std::string& srcPort,
+                             const std::string& dst,
+                             const std::string& dstPort)
+{
+    xml_node<>* rtn = static_cast<xml_node<>*>(0);
+
+    if (current_node == rtn /* i.e. static_cast<xml_node<>*>(0) */) {
+        current_node = this->root_node;
+    }
+
+    // 1. Is current_node an LL:Input?
+    string cname = current_node->name();
+
+    xml_attribute<>* nattr = current_node->first_attribute ("name");
+    string pname("");
+    if (nattr) {
+        pname = nattr->value();
+    }
+
+    if (current_node->name_size() == STRLEN_LLINPUT && cname == "LL:Input") {
+        // This node is an LL:Input. Does the name of the parent match?
+        if (parentName == dst) {
+            // Parent container name matches the dst attribute in the
+            // LL:Input. do the src, srcPort and dstPort attributes of
+            // this Input match?
+            xml_attribute<>* srcAttr = current_node->first_attribute ("src");
+            xml_attribute<>* srcPortAttr = current_node->first_attribute ("src_port");
+            xml_attribute<>* dstPortAttr = current_node->first_attribute ("dst_port");
+
+            if (!srcAttr || !srcPortAttr || !dstPortAttr) {
+                // no match, we don't have all the requried attributes in this Input element
+            } else {
+                string srcStr = srcAttr->value();
+                string srcPortStr = srcPortAttr->value();
+                string dstPortStr = dstPortAttr->value();
+
+                if (srcStr == src && srcPortStr == srcPort && dstPortStr == dstPort) {
+                    // Match!
+                    rtn = current_node;
+                } // else no match.
+            }
+        } // else this is an LL:Input, but it has the wrong parent for the specified dst.
+
+    } else {
+        // Not an LL:Input, so search down then sideways
+        xml_node<>* next_node;
+        for (next_node = current_node->first_node();
+             next_node;
+             next_node = next_node->next_sibling()) {
+
+            if ((rtn = this->findLLInput (next_node, pname, src, srcPort, dst, dstPort)) != static_cast<xml_node<>*>(0)) {
+                // next_node was an LL:Input of interest!
+                break;
+            }
+        }
+    }
+
+    return rtn;
+}
+
+#define STRLEN_LLWEIGHTUPDATE 15
+rapidxml::xml_node<>*
+ModelPreflight::findLLWeightUpdate (rapidxml::xml_node<>* current_node,
+                                    const std::string& name)
+{
+    xml_node<>* rtn = static_cast<xml_node<>*>(0);
+
+    if (current_node == rtn /* i.e. static_cast<xml_node<>*>(0) */) {
+        current_node = this->root_node;
+    }
+
+    // 1. Is current_node an LL:WeightUpdate?
+    string cname = current_node->name();
+
+    xml_attribute<>* nattr = current_node->first_attribute ("name");
+    string pname("");
+    if (nattr) {
+        pname = nattr->value();
+    }
+
+    if (current_node->name_size() == STRLEN_LLWEIGHTUPDATE && cname == "LL:WeightUpdate") {
+        // This node is an LL:WeightUpdate. Does its name match name?
+        if (pname == name) {
+            // Match!
+            rtn = current_node;
+        } // else no match.
+
+    } else {
+        // Not an LL:WeightUpdate, so search down then sideways
+        xml_node<>* next_node;
+        for (next_node = current_node->first_node();
+             next_node;
+             next_node = next_node->next_sibling()) {
+
+            if ((rtn = this->findLLWeightUpdate (next_node, name)) != static_cast<xml_node<>*>(0)) {
+                // next_node was an LL:WeightUpdate of interest!
+                break;
+            }
+        }
+    }
+
+    return rtn;
+}
+
 #ifdef EXPLICIT_BINARY_DATA_CONVERSION
 #include <cstdio>
 

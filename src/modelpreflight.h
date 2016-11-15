@@ -97,6 +97,75 @@ namespace spineml
                                             const std::string& propertyName);
 
         /*!
+         * Find the next XML node named @param elementName, starting
+         * from @param current_node and searching down into child
+         * nodes.
+         */
+        rapidxml::xml_node<>* findNamedElement (rapidxml::xml_node<>* current_node,
+                                                std::string& elementName);
+
+        /*!
+         * Find the nearest parent XML node named @param elementName,
+         * starting from @param current_node.
+         */
+        rapidxml::xml_node<>* findNamedParent (rapidxml::xml_node<>* current_node,
+                                               std::string& elementName);
+
+        /*!
+         * Find an LL:Input element with src @param src, source port
+         * @param srcPort, destination port @param dstPort in a Neuron
+         * population named @param dst. Return pointer to the node if
+         * found, null pointer if not. The container should be a
+         * neuron population or I guess a postsynapse - any object in
+         * the model which can contain an LL:Input.
+         *
+         * This is a recursive function.
+         *
+         * @param current_node The current node being searched.
+         *
+         * @param parentName The name attribute of the parent node of
+         * current_node.
+         *
+         * @param src The src attribute of the LL:Input element -
+         * where the connection comes from.
+         *
+         * @param srcPort The src_port attribute of the LL:Input
+         * element. The port on the src population from which the
+         * connection originates.
+         *
+         * @param dst The name of the object to which the connection
+         * connects - the container in which the LL:Input resides.
+         *
+         * @param dstPort The dst_port attribute of the LL:Input
+         * element.
+         */
+        rapidxml::xml_node<>* findLLInput (rapidxml::xml_node<>* current_node,
+                                           const std::string& parentName,
+                                           const std::string& src,
+                                           const std::string& srcPort,
+                                           const std::string& dst,
+                                           const std::string& dstPort);
+
+        /*!
+         * Find an LL:WeightUpdate element with src @param src, source
+         * port @param srcPort, destination port @param dstPort in a
+         * Neuron population named @param dst. Return pointer to the
+         * node if found, null pointer if not. The container should be
+         * a neuron population or I guess a postsynapse - any object
+         * in the model which can contain an LL:Input.
+         *
+         * This is a recursive function.
+         *
+         * @param current_node The current node being searched.
+         *
+         * @param name The name attribute of the LL:WeightUpdate
+         * element - this specifies the source population, the
+         * destination population and the synapse.
+         */
+        rapidxml::xml_node<>* findLLWeightUpdate (rapidxml::xml_node<>* current_node,
+                                                  const std::string& name);
+
+        /*!
          * Backup the existing model.xml file, then overwrite it with
          * the current content of @see doc
          */

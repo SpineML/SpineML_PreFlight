@@ -76,6 +76,18 @@ namespace spineml
         void addPropertyChangeRequest (const std::string& pcrequest);
 
         /*!
+         * Add the raw delay change request, as provided on the
+         * command line. If the request has a bad format, throw an exception.
+         *
+         * This method splits up the single command line option passed
+         * as @param dcrequest  It then checks in the model.xml to ensure
+         * that the requested connection exists. If this turns out to be
+         * the case, it then calls @see insertModelDelayConfig to add the
+         * delay change/model configuration update.
+         */
+        void addDelayChangeRequest (const std::string& dcrequest);
+
+        /*!
          * Add the raw constant current request, as provided on the
          * command line. If the request has a bad format, throw an
          * exception.
@@ -107,6 +119,28 @@ namespace spineml
                                 const std::vector<std::string>& elements);
 
         /*!
+         * This actually does the work of inserting a new
+         * Delay node to the experiment's Model node.
+         *
+         * @param elements a vertor of 4 elements: src, dest, synapse
+         * and new value which have been extracted from a command line
+         * argument.
+         */
+        void insertModelProjectionDelay (rapidxml::xml_node<>* delay_node,
+                                         const std::vector<std::string>& elements);
+
+        /*!
+         * This actually does the work of inserting a new
+         * Delay node to the experiment's Model node.
+         *
+         * @param elements a vertor of 5 elements: src, srcPort, dst,
+         * dstPort and new value which have been extracted from a
+         * command line argument.
+         */
+        void insertModelGenericDelay (rapidxml::xml_node<>* delay_node,
+                                      const std::vector<std::string>& elements);
+
+        /*!
          * Update or insert new ConstantCurrent node into the experiment xml
          */
         void insertExptConstCurrent (const std::vector<std::string>& elements);
@@ -118,6 +152,20 @@ namespace spineml
 
         //! A simple accessor for this->modelDir.
         void setModelDir (const std::string& dir);
+
+    private:
+        /*!
+         * Builds up a projection weight update name such as
+         * "PopA_to_PopB_Synapse_0_weight_update"
+         */
+        std::string buildProjectionWUName (const std::string& src, const std::string& dst,
+                                           const std::string& synapsenum);
+
+        /*!
+         * Given the xml_document, find the Model node inside an
+         * Experiment node and return it.
+         */
+        rapidxml::xml_node<>* findExperimentModel (rapidxml::xml_document<>& doc);
 
     private:
         //! write The XML document provided in @param the_doc out to

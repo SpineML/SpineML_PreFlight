@@ -152,6 +152,83 @@ Experiment::write (const xml_document<>& the_doc)
 }
 
 void
+Experiment::addDelayChangeRequest (const string& dcrequest)
+{
+    // Looks like: "PopA:PopB:SynNum:value" for projection or
+    // "PopA:PortA:PopB:PortB:value" for generic connection.
+    vector<string> elements = Util::splitStringWithEncs (dcrequest);
+
+    // Now sanity check the elements.
+    if (elements.size() != 4 && elements.size() != 5) {
+        stringstream ee;
+        ee << "Wrong number of elements in delay change request.\n";
+        ee << elements.size() << " elements in constant current request (expect 4 or 5).\n";
+        throw runtime_error (ee.str());
+    }
+
+    // Some output to cmd line
+    if (elements.size() == 4) { // projection
+        cout << "Preflight: Projection delay change request: '" << elements[0]
+             << "'->'" << elements[1] << "', synapse " << elements[2] << " delay becomes " << elements[3] << " ms\n";
+    } else { // generic input connection
+        cout << "Preflight: Generic connection delay change request: '" << elements[0] << "' port " << elements[1]
+             << "'->'" << elements[2] << "', port " << elements[3] << " delay becomes " << elements[4] << " ms\n";
+    }
+
+    // We have the elements, we now need to search model.xml to make
+    // sure the connections exist.
+    spineml::ModelPreflight model (this->modelDir, this->network_layer_path);
+    model.init();
+
+    string delayname("Delay");
+    if (elements.size() == 4) { // projection
+
+        string wuname = this->buildProjectionWUName (elements[0], elements[1], elements[2]);
+        xml_node<>* weightupdate_node = model.findLLWeightUpdate (static_cast<xml_node<>*>(0), wuname);
+        if (!weightupdate_node) {
+            // No such weight update node in the model, so throw a runtime error
+            stringstream ee;
+            ee << "The model does not contain a weight update node named '" << wuname << "'";
+            throw runtime_error (ee.str());
+        }
+
+        // Now find the parent synapse node, then find the Delay node.
+        string synname("LL:Synapse");
+        xml_node<>* synapse_node = model.findNamedParent (weightupdate_node, synname);
+        if (!synapse_node) {
+            throw runtime_error ("This LL:WeightUpdate does not have an LL:Synapse parent");
+        }
+        xml_node<>* delay_node = model.findNamedElement(synapse_node, delayname);
+        if (!delay_node) {
+            throw runtime_error ("This LL:WeightUpdate does not have a Delay sibling");
+        }
+
+        // Can now insert a node into our experiment.
+        this->insertModelProjectionDelay (delay_node, elements);
+
+    } else { // generic input connection
+
+        xml_node<>* input_node = model.findLLInput (static_cast<xml_node<>*>(0), "root", elements[0], elements[1], elements[2], elements[3]);
+        if (!input_node) {
+            // No such node in the model, so throw a runtime error
+            stringstream ee;
+            ee << "The model does not contain an LL:Input with src='" << elements[0]
+               << "', src_port=" << elements[1] << " and dst_port=" << elements[3] << " in a containing LL:Neuron called '" << elements[2] << "'";
+            throw runtime_error (ee.str());
+        }
+
+        // Now find the delay node which is inside the input_node.
+        xml_node<>* delay_node = model.findNamedElement (input_node, delayname);
+        if (!delay_node) {
+            throw runtime_error ("This LL:Input does not contain an Delay");
+        }
+
+        // Can now insert a node into our experiment.
+        this->insertModelGenericDelay (delay_node, elements);
+    }
+}
+
+void
 Experiment::addPropertyChangeRequest (const string& pcrequest)
 {
     // Looks like: "Population:varname:value" where value could be
@@ -260,14 +337,17 @@ Experiment::addTimeVaryingCurrentRequest (const string& tvcrequest)
     this->insertExptTimeVaryingCurrent (elements);
 }
 
-void
-Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& elements)
+std::string
+Experiment::buildProjectionWUName (const std::string& src, const std::string& dst, const std::string& synapsenum)
 {
-    xml_document<> doc;
-    AllocAndRead ar(this->filepath);
-    char* textptr = ar.data();
-    doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
-    // NB: This really DOES have to be the root node.
+    stringstream wuss;
+    wuss << src << " to " << dst << " Synapse " << synapsenum << " weight_update";
+    return wuss.str();
+}
+
+rapidxml::xml_node<>*
+Experiment::findExperimentModel (xml_document<>& doc)
+{
     xml_node<>* root_node = doc.first_node("SpineML");
     if (!root_node) {
         throw runtime_error ("experiment XML: no root SpineML node");
@@ -280,6 +360,169 @@ Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& 
     if (!model_node) {
         throw runtime_error ("experiment XML: no Model node");
     }
+
+    return model_node;
+}
+
+void
+Experiment::insertModelProjectionDelay (xml_node<>* delay_node, const vector<string>& elements)
+{
+    xml_document<> doc;
+    AllocAndRead ar(this->filepath);
+    char* textptr = ar.data();
+    doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
+
+    xml_node<>* model_node = this->findExperimentModel (doc);
+
+    // Need to find delay_node in model_node and replace or insert
+    // a new one. What do we know about property_node?  We have
+    // container name which is elements[0], property name elements[1]
+    // and value elements[2].
+    string wuname = this->buildProjectionWUName (elements[0], elements[1], elements[2]);
+
+    xml_node<>* into_node = static_cast<xml_node<>*>(0);
+    // Go through each Configuration.
+    for (xml_node<>* model_delay_node = model_node->first_node ("Delay");
+         model_delay_node;
+         model_delay_node = model_delay_node->next_sibling ("Delay")) {
+        xml_attribute<>* wuattr = model_delay_node->first_attribute ("weight_update");
+        if (wuattr) {
+            string wu(wuattr->value());
+            if (wu == wuname) {
+                // This Delay's weight_update attribute matches the parameters given on the cmd line
+                into_node = model_delay_node;
+                break;
+            }
+        }
+    }
+
+    bool created_node (false);
+    if (!into_node) { // into_node will be a "Delay"
+        // Create into_node as it doesn't already exist.
+        into_node = doc.allocate_node (node_element, "Delay");
+        created_node = true;
+    } // else existing matching configuration found
+
+    // 1. Remove any existing attributes and child nodes from into_node.
+    into_node->remove_all_attributes();
+    into_node->remove_all_nodes();
+    // 2. Add new weight_update attribute
+    char* wustr_alloced = doc.allocate_string (wuname.c_str());
+    xml_attribute<>* wu_attr = doc.allocate_attribute ("weight_update", wustr_alloced);
+    into_node->append_attribute (wu_attr);
+    // 3. Add dimension attribute
+    char* dimstr_alloced = doc.allocate_string ("ms");
+    xml_attribute<>* dim_attr = doc.allocate_attribute ("dimension", dimstr_alloced);
+    into_node->append_attribute (dim_attr);
+
+    // 4. Allocate new fixed value node
+    xml_node<>* fv_node = doc.allocate_node (node_element, "UL:FixedValue");
+    // Allocate and append an attribute
+    char* val_alloced = doc.allocate_string (elements[3].c_str());
+    xml_attribute<>* value_attr = doc.allocate_attribute ("value", val_alloced);
+    fv_node->append_attribute (value_attr);
+    into_node->prepend_node (fv_node);
+
+    // Now add the new Delay node to the document's Model node, if it
+    // has been newly created.
+    if (created_node == true) {
+        model_node->prepend_node (into_node);
+    }
+    // At end, write out the xml.
+    this->write (doc);
+}
+
+void
+Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string>& elements)
+{
+    xml_document<> doc;
+    AllocAndRead ar(this->filepath);
+    char* textptr = ar.data();
+    doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
+    xml_node<>* model_node = this->findExperimentModel (doc);
+
+    // Need to find delay_node in model_node which matches elements 0,1,2 and 3.
+
+    xml_node<>* into_node = static_cast<xml_node<>*>(0);
+    // Go through each Configuration.
+    for (xml_node<>* model_delay_node = model_node->first_node ("Delay");
+         model_delay_node;
+         model_delay_node = model_delay_node->next_sibling ("Delay")) {
+
+        xml_attribute<>* sattr = model_delay_node->first_attribute ("src_population");
+        xml_attribute<>* spattr = model_delay_node->first_attribute ("src_port");
+        xml_attribute<>* dattr = model_delay_node->first_attribute ("dst_population");
+        xml_attribute<>* dpattr = model_delay_node->first_attribute ("dst_port");
+
+        if (sattr && spattr && dattr && dpattr) {
+            string s(sattr->value());
+            string sp(spattr->value());
+            string d(dattr->value());
+            string dp(dpattr->value());
+            //cout << s << sp << d << dp;
+            if (s == elements[0] && sp == elements[1] && d == elements[2] && dp == elements[3]) {
+                // This Delay's attributes match the parameters given on the cmd line
+                into_node = model_delay_node;
+                break;
+            }
+        }
+
+    }
+
+    bool created_node (false);
+    if (!into_node) { // into_node will be a "Delay"
+        // Create into_node as it doesn't already exist.
+        into_node = doc.allocate_node (node_element, "Delay");
+        created_node = true;
+    } // else existing matching configuration found
+
+    // 1. Remove any existing attributes and child nodes from into_node.
+    into_node->remove_all_attributes();
+    into_node->remove_all_nodes();
+    // 2. Add new src,srcPort,dst and dstPort attributes
+    char* sstr_alloced = doc.allocate_string (elements[0].c_str());
+    xml_attribute<>* s_attr = doc.allocate_attribute ("src_population", sstr_alloced);
+    into_node->append_attribute (s_attr);
+    char* spstr_alloced = doc.allocate_string (elements[1].c_str());
+    xml_attribute<>* sp_attr = doc.allocate_attribute ("srcPort", spstr_alloced);
+    into_node->append_attribute (sp_attr);
+    char* dstr_alloced = doc.allocate_string (elements[2].c_str());
+    xml_attribute<>* d_attr = doc.allocate_attribute ("dst_population", dstr_alloced);
+    into_node->append_attribute (d_attr);
+    char* dpstr_alloced = doc.allocate_string (elements[3].c_str());
+    xml_attribute<>* dp_attr = doc.allocate_attribute ("dstPort", dpstr_alloced);
+    into_node->append_attribute (dp_attr);
+
+    // 3. Add dimension attribute
+    char* dimstr_alloced = doc.allocate_string ("ms");
+    xml_attribute<>* dim_attr = doc.allocate_attribute ("dimension", dimstr_alloced);
+    into_node->append_attribute (dim_attr);
+
+    // 4. Allocate new fixed value node
+    xml_node<>* fv_node = doc.allocate_node (node_element, "UL:FixedValue");
+    // Allocate and append an attribute
+    char* val_alloced = doc.allocate_string (elements[4].c_str());
+    xml_attribute<>* value_attr = doc.allocate_attribute ("value", val_alloced);
+    fv_node->append_attribute (value_attr);
+    into_node->prepend_node (fv_node);
+
+    // Now add the new Delay node to the document's Model node, if it
+    // has been newly created.
+    if (created_node == true) {
+        model_node->prepend_node (into_node);
+    }
+    // At end, write out the xml.
+    this->write (doc);
+}
+
+void
+Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& elements)
+{
+    xml_document<> doc;
+    AllocAndRead ar(this->filepath);
+    char* textptr = ar.data();
+    doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
+    xml_node<>* model_node = this->findExperimentModel (doc);
 
     // Need to find property_node in model_node and replace or insert
     // a new one. What do we know about property_node?  We have

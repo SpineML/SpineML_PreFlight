@@ -72,6 +72,11 @@ struct CmdOptions {
     vector<string> constant_currents;
     //! To hold a list of all time varying currents requested by the user
     vector<string> tvarying_currents;
+    //! To hold a list of all connection delay changes requested by the user
+    char * delay_change;
+    vector<string> delay_changes;
+
+    // FIXME: Add array_tvarying_currents and array_constant_currents
 };
 
 /*!
@@ -83,10 +88,12 @@ void zeroCmdOptions (CmdOptions* copts)
     copts->backup_model = 0;
     copts->property_change = NULL;
     copts->property_changes.clear();
-    copts->constant_current=NULL;
+    copts->constant_current = NULL;
     copts->constant_currents.clear();
-    copts->tvarying_current=NULL;
+    copts->tvarying_current = NULL;
     copts->tvarying_currents.clear();
+    copts->delay_change = NULL;
+    copts->delay_changes.clear();
 }
 
 /*
@@ -123,6 +130,8 @@ void property_change_callback (poptContext con,
             cmdOptions.constant_currents.push_back (cmdOptions.constant_current);
         } else if (opt->shortName == 'p') {
             cmdOptions.property_changes.push_back (cmdOptions.property_change);
+        } else if (opt->shortName == 'd') {
+            cmdOptions.delay_changes.push_back (cmdOptions.delay_change);
         } else if (opt->shortName == 't') {
             cmdOptions.tvarying_currents.push_back (cmdOptions.tvarying_current);
         }
@@ -167,6 +176,16 @@ int main (int argc, char * argv[])
         {"property_change", 'p',
          POPT_ARG_STRING, &(cmdOptions.property_change), 0,
          "Change a property. Provide an argument like \"Population:tau:45\". "
+         "This option can be used multiple times."},
+
+        {"delay_change", 'd',
+         POPT_ARG_STRING, &(cmdOptions.delay_change), 0,
+         "Change a delay on a projection of generic connection. For projections, "
+         "provide an argument like \"PopA:PopB:0:45\" to set a"
+         "delay of 45 ms to the projection from PopA to PopB on synapse 0."
+         "For generic connections the argument should be \"PopA:PortA:PopB:PortB:45\" "
+         "to set a 45 ms delay to the connection from PortA on PopA to PortB on PopB. "
+         "It is only possible to set fixed delays using this argument. "
          "This option can be used multiple times."},
 
         {"constant_current", 'c',
@@ -224,6 +243,14 @@ int main (int argc, char * argv[])
         while (pciter != cmdOptions.property_changes.end()) {
             // Add this "property change request" to the experiment.
             expt.addPropertyChangeRequest (*pciter);
+            ++pciter;
+        }
+
+        pciter = cmdOptions.delay_changes.begin();
+        while (pciter != cmdOptions.delay_changes.end()) {
+            // Add this "delay change request" to the experiment.
+            cout << "Add delay change request";
+            expt.addDelayChangeRequest (*pciter);
             ++pciter;
         }
 

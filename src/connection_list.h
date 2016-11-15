@@ -134,7 +134,8 @@ namespace spineml
          * NB: This only writes out the source to destination
          * connections (connectivityS2C/connectivityC2D).
          */
-        void write (rapidxml::xml_node<>* into_node, const std::string& model_root, const std::string& binary_file_name);
+        void write (rapidxml::xml_node<>* into_node,
+                    const std::string& model_root, const std::string& binary_file_name);
 
         /*!
          * Generate the explicit list of connection delays. This may

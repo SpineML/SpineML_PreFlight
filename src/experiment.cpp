@@ -459,7 +459,6 @@ Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string
             string sp(spattr->value());
             string d(dattr->value());
             string dp(dpattr->value());
-            //cout << s << sp << d << dp;
             if (s == elements[0] && sp == elements[1] && d == elements[2] && dp == elements[3]) {
                 // This Delay's attributes match the parameters given on the cmd line
                 into_node = model_delay_node;

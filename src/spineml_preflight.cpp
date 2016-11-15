@@ -286,7 +286,7 @@ int main (int argc, char * argv[])
                 cout << expt.modelUrl() << endl;
             }
         } else {
-            model.preflight();
+            model.preflight(/*expt.delayChanges*/);
             // Write out the now modified xml:
             model.write();
             cout << "Preflight Finished.\n";

@@ -206,6 +206,16 @@ Experiment::addDelayChangeRequest (const string& dcrequest)
         // Can now insert a node into our experiment.
         this->insertModelProjectionDelay (delay_node, elements);
 
+        // Record the delay changes for later use when the model
+        // itself is pre-flighted. Some delays may need to be written
+        // into the binary file.
+        DelayChange d(DELAYCHANGE_PROJECTION);
+        d.src = elements[0];
+        d.dst = elements[1];
+        d.setSynapseNumber(elements[2]);
+        d.setDelay (elements[3]);
+        this->delayChanges.push_back(d);
+
     } else { // generic input connection
 
         xml_node<>* input_node = model.findLLInput (static_cast<xml_node<>*>(0), "root", elements[0], elements[1], elements[2], elements[3]);
@@ -225,6 +235,14 @@ Experiment::addDelayChangeRequest (const string& dcrequest)
 
         // Can now insert a node into our experiment.
         this->insertModelGenericDelay (delay_node, elements);
+
+        DelayChange d(DELAYCHANGE_GENERIC);
+        d.src = elements[0];
+        d.srcPort = elements[1];
+        d.dst = elements[2];
+        d.dstPort = elements[3];
+        d.setDelay (elements[4]);
+        this->delayChanges.push_back(d);
     }
 }
 

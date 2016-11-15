@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <utility>
 #include "rapidxml.hpp"
+#include "delaychange.h"
 
 namespace spineml
 {
@@ -190,6 +191,9 @@ namespace spineml
 
         //! The location of experiment.xml and model.xml
         std::string modelDir;
+
+        //! A vector of the delay changes which have been specified by the user.
+        std::vector<DelayChange> delayChanges;
 
         /*
          * Could also add time varying inputs and log output fields if

@@ -15,6 +15,7 @@
 #include "allocandread.h"
 #include "component.h"
 #include "connection_list.h"
+#include "delaychange.h"
 
 /*!
  * It may be that we need to run this for HL and LL models, in which
@@ -63,6 +64,16 @@ namespace spineml
          * modify in this preflight process.
          */
         void preflight (void);
+
+        /*!
+         * Like preflight(void), but takes a vector of DelayChanges
+         * specified by the user, which will appear in the
+         * experimentN.xml file. This vector is passed in so that
+         * where there are connections whose delays are stored in
+         * binary connection lists, the changed, fixed value delay can
+         * be incorporated.
+         */
+        void preflight (const std::vector<DelayChange>& exptDelayChanges);
 
         /*!
          * Get the set of components used in the model. Used with the
@@ -206,6 +217,22 @@ namespace spineml
 
     private:
         /*!
+         * Search our delayChanges vector to find if there is a delay
+         * change matching the passed-in arguments. If so, return the
+         * delay as a float. If not, return a number <0 (-1.0).
+         */
+        float searchDelayChanges (const std::string& src, const std::string& dst,
+                                  const std::string& synapseNum);
+
+        /*!
+         * Search our delayChanges vector to find if there is a delay
+         * change matching the passed-in arguments. If so, return the
+         * delay as a float. If not, return a number <0 (-1.0).
+         */
+        float searchDelayChanges (const std::string& src, const std::string& srcPort,
+                                  const std::string& dst, const std::string& dstPort);
+
+        /*!
          * Find the number of neurons in the destination population, starting
          * from the root node or the first population node (globals/members).
          *
@@ -335,9 +362,14 @@ namespace spineml
          * @param input_node The <Input> node. This gives the number of members in the
          * source population.
          *
+         * @param dest_name The name of the destination population (or
+         * projection, I guess).
+         *
          * @param dest_num The number of members in the destination population.
          */
-        void preflight_input (rapidxml::xml_node<>* input_node, const std::string& dest_num);
+        void preflight_input (rapidxml::xml_node<>* input_node,
+                              const std::string& dest_name,
+                              const std::string& dest_num);
 
         /*!
          * Do the work of replacing a FixedProbability connection with a
@@ -373,9 +405,15 @@ namespace spineml
          * @param src_num The number of members in the source population.
          *
          * @param dst_num The number of members in the destination population.
+         *
+         * @param fixedValDelayChange If this is a connection which
+         * has had its delay overridden in the experiment layer, then
+         * the new delay is passed in as this argument.
          */
         void replace_fixedprob_connection (rapidxml::xml_node<>* fixedprob_node,
-                                           const std::string& src_num, const std::string& dst_num);
+                                           const std::string& src_num,
+                                           const std::string& dst_num,
+                                           float fixedValDelayChange = -1.0);
 
         /*!
          * Do the work of replacing an XML-only ConnectionList connection with a
@@ -402,13 +440,22 @@ namespace spineml
          * \endverbatim
          *
          * @param connlist_node The ConnectionList node to update.
+         *
+         * @param fixedValDelayChange If this is a connection which
+         * has had its delay overridden in the experiment layer, then
+         * the new delay is passed in as this argument.
          */
-        void connection_list_to_binary (rapidxml::xml_node<> *connlist_node);
+        void connection_list_to_binary (rapidxml::xml_node<> *connlist_node,
+                                        float fixedValDelayChange = -1);
 
         /*!
          * Configure connection delays in @param cl using the delays
          * specified in @param parent_node. This reads the <Delay>
          * element from the XML into the ConnectionList object.
+         *
+         * @param fixedValDelayChange If this is a connection which
+         * has had its delay overridden in the experiment layer, then
+         * the new delay is passed in as this argument.
          *
          * @return true if a Delay element was found, false if the
          * Delay element was not found.
@@ -416,7 +463,8 @@ namespace spineml
          * Throws exceptions on errors.
          */
         bool setup_connection_delays (rapidxml::xml_node<> *parent_node,
-                                      spineml::ConnectionList& cl);
+                                      spineml::ConnectionList& cl,
+                                      float fixedValDelayChange = -1);
 
         /*!
          * Write out the pf_connectionN.bin file out. The @param
@@ -572,6 +620,14 @@ namespace spineml
          * each component.
          */
         std::map<std::string, spineml::Component> components;
+
+        /*!
+         * A set of the user-specified experiment-layer delay changes
+         * that have been applied. Passed in and then stored here so
+         * that these delay changes can be applied in cases where the
+         * delays are expanded into binary lists.
+         */
+        std::vector<DelayChange> delayChanges;
 
     public:
         /*!

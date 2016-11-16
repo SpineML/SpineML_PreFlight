@@ -230,7 +230,16 @@ Experiment::addDelayChangeRequest (const string& dcrequest)
         // Now find the delay node which is inside the input_node.
         xml_node<>* delay_node = model.findNamedElement (input_node, delayname);
         if (!delay_node) {
-            throw runtime_error ("This LL:Input does not contain an Delay");
+            // Actually, this isn't necessarily an error - this Input
+            // may contain a connection list which itself contains
+            // individual delays (which we will then override).
+            string cl("ConnectionList");
+            xml_node<>* connlist_node = model.findNamedElement (input_node, cl);
+            if (!connlist_node) {
+                throw runtime_error ("This LL:Input does not contain a Delay element");
+            } // else no delay, but delays presumably inside connlist
+              // node (could check for at least one Connection node
+              // therein, containing a delay attribute).
         }
 
         // Can now insert a node into our experiment.

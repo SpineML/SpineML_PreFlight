@@ -168,6 +168,10 @@ namespace spineml
          */
         rapidxml::xml_node<>* findExperimentModel (rapidxml::xml_document<>& doc);
 
+    public:
+        //! A vector of the delay changes which have been specified by the user.
+        std::vector<DelayChange> delayChanges;
+
     private:
         //! write The XML document provided in @param the_doc out to
         //! file.
@@ -191,9 +195,6 @@ namespace spineml
 
         //! The location of experiment.xml and model.xml
         std::string modelDir;
-
-        //! A vector of the delay changes which have been specified by the user.
-        std::vector<DelayChange> delayChanges;
 
         /*
          * Could also add time varying inputs and log output fields if

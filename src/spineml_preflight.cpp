@@ -249,7 +249,6 @@ int main (int argc, char * argv[])
         pciter = cmdOptions.delay_changes.begin();
         while (pciter != cmdOptions.delay_changes.end()) {
             // Add this "delay change request" to the experiment.
-            cout << "Add delay change request";
             expt.addDelayChangeRequest (*pciter);
             ++pciter;
         }
@@ -286,7 +285,7 @@ int main (int argc, char * argv[])
                 cout << expt.modelUrl() << endl;
             }
         } else {
-            model.preflight(/*expt.delayChanges*/);
+            model.preflight(expt.delayChanges);
             // Write out the now modified xml:
             model.write();
             cout << "Preflight Finished.\n";

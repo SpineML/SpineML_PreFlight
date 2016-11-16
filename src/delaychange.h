@@ -43,6 +43,53 @@ namespace spineml
             ss >> this->delay;
         }
 
+        /*!
+         * Does the candidate information for source population,
+         * destination population and synapse number match this
+         * DelayChange?
+         */
+        bool matches (const std::string& candSrc,
+                      const std::string& candDst,
+                      const std::string& candSynNum) const {
+            // 3 args mean that this must be a projection delay change.
+            if (this->type != DELAYCHANGE_PROJECTION) {
+                return false;
+            }
+            if (this->src != candSrc || this->dst != candDst) {
+                return false;
+            }
+            std::stringstream ss;
+            ss << candSynNum;
+            unsigned int csn = 0;
+            ss >> csn;
+            if (this->synapseNumber != csn) {
+                return false;
+            }
+            return true;
+        }
+
+        /*!
+         * Does the candidate information for source population,
+         * destination population and src/dst port match this
+         * DelayChange?
+         */
+        bool matches (const std::string& candSrc,
+                      const std::string& candSrcPort,
+                      const std::string& candDst,
+                      const std::string& candDstPort) const {
+            // 4 args mean that this must be a generic input delay change.
+            if (this->type != DELAYCHANGE_GENERIC) {
+                return false;
+            }
+            if (this->src != candSrc || this->dst != candDst) {
+                return false;
+            }
+            if (this->srcPort != candSrcPort || this->dstPort != candDstPort) {
+                return false;
+            }
+            return true;
+        }
+
     private:
         DelayChangeType type;
 

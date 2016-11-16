@@ -102,6 +102,21 @@ ModelPreflight::preflight (void)
     }
 }
 
+void
+ModelPreflight::preflight (const std::vector<DelayChange>& exptDelayChanges)
+{
+    this->init();
+    this->delayChanges = exptDelayChanges;
+    // Search each population for stuff.
+    this->first_pop_node = this->root_node->first_node(LVL"Population");
+    xml_node<>* pop_node = this->first_pop_node;
+    for (pop_node = this->root_node->first_node(LVL"Population");
+         pop_node;
+         pop_node = pop_node->next_sibling(LVL"Population")) {
+        this->preflight_population (pop_node);
+    }
+}
+
 set<string>
 ModelPreflight::get_component_set (void)
 {
@@ -211,7 +226,7 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
          proj_node;
          proj_node = proj_node->next_sibling(LVL"Projection")) {
         // pop_name and pop_num are "src_name" and "src_num" for projections.
-        preflight_projection (proj_node, pop_name, pop_num);
+        this->preflight_projection (proj_node, pop_name, pop_num);
     }
 
     // Now do a similar thing for connections which are not projections.
@@ -222,8 +237,8 @@ ModelPreflight::preflight_population (xml_node<>* pop_node)
         // "dst_num", because the <Input> element sits inside the DESTINATION population,
         // whereas Projection elements sit inside the source population. The source
         // population can be found from the Input attribute "src".
-        cout << "preflight_input for current name/num: " << pop_name << "," << pop_num << "\n";
-        preflight_input (input_node, pop_num);
+        //cout << "preflight_input for current name/num: " << pop_name << "," << pop_num << "\n";
+        this->preflight_input (input_node, pop_name, pop_num);
     }
 
     if (c_name == "SpikeSource") {
@@ -347,22 +362,42 @@ ModelPreflight::preflight_projection (xml_node<>* proj_node,
         dst_population = dst_pop_attr->value();
     } // else failed to get src name
 
+    cout << "PreFlight: processing projection " << src_name << " to " << dst_population << endl;
+
     // And then for each synapse in the projection:
     for (xml_node<>* syn_node = proj_node->first_node(LVL"Synapse");
          syn_node;
          syn_node = syn_node->next_sibling(LVL"Synapse")) {
-        preflight_synapse (syn_node, src_name, src_num, dst_population);
+        this->preflight_synapse (syn_node, src_name, src_num, dst_population);
     }
 }
 
 void
-ModelPreflight::preflight_input (xml_node<>* input_node, const string& dest_num)
+ModelPreflight::preflight_input (xml_node<>* input_node,
+                                 const string& dest_name,
+                                 const string& dest_num)
 {
     string src_name("");
     xml_attribute<>* src_name_attr;
     if ((src_name_attr = input_node->first_attribute ("src"))) {
         src_name = src_name_attr->value();
-    } // else failed to get src nane
+    } // else failed to get src name
+
+    string src_port("");
+    xml_attribute<>* src_port_attr;
+    if ((src_port_attr = input_node->first_attribute ("src_port"))) {
+        src_port = src_port_attr->value();
+    } // else failed to get src port
+
+    string dst_port("");
+    xml_attribute<>* dst_port_attr;
+    if ((dst_port_attr = input_node->first_attribute ("dst_port"))) {
+        dst_port = dst_port_attr->value();
+    } // else failed to get dst port
+
+    cout << "PreFlight: processing generic input " << src_name << "/" << src_port
+         << " to " << dest_name << "/" << dst_port << endl;
+    float fixedDelay = this->searchDelayChanges (src_name, src_port, dest_name, dst_port);
 
     // Now just replace any FixedProbability or ConnectionList nodes.
     xml_node<>* fixedprob_connection = input_node->first_node("FixedProbabilityConnection");
@@ -381,11 +416,42 @@ ModelPreflight::preflight_input (xml_node<>* input_node, const string& dest_num)
                << src_name << "'";
             throw runtime_error (ee.str());
         }
-        replace_fixedprob_connection (fixedprob_connection, src_num, dest_num);
+        this->replace_fixedprob_connection (fixedprob_connection, src_num, dest_num, fixedDelay);
     } else if (connection_list) {
         // Check if it's already binary, if not, expand.
-        connection_list_to_binary (connection_list);
+        this->connection_list_to_binary (connection_list, fixedDelay);
     }
+}
+
+float
+ModelPreflight::searchDelayChanges (const string& src, const string& dst,
+                                    const string& synapseNum)
+{
+    vector<DelayChange>::const_iterator i = this->delayChanges.begin();
+    while (i != this->delayChanges.end()) {
+        if (i->matches(src, dst, synapseNum)) {
+            return i->delay;
+        }
+        ++i;
+    }
+    // No match, so return <0
+    return -1.0;
+}
+
+float
+ModelPreflight::searchDelayChanges (const string& src, const string& srcPort,
+                                    const string& dst, const string& dstPort)
+
+{
+    vector<DelayChange>::const_iterator i = this->delayChanges.begin();
+    while (i != this->delayChanges.end()) {
+        if (i->matches(src, srcPort, dst, dstPort)) {
+            return i->delay;
+        }
+        ++i;
+    }
+    // No match, so return <0
+    return -1.0;
 }
 
 void
@@ -394,6 +460,10 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
                                    const string& src_num,
                                    const string& dst_population)
 {
+    // Does this synapse match any of the DelayChanges? If it does,
+    // then 0 <= delay <= inf is returned. Otherwise, -1 is returned.
+    float fixedDelay = this->searchDelayChanges (src_name, src_num, dst_population);
+
     // For each synapse... Is there a FixedProbability?
     xml_node<>* fixedprob_connection = syn_node->first_node("FixedProbabilityConnection");
     xml_node<>* connection_list = syn_node->first_node("ConnectionList");
@@ -411,10 +481,10 @@ ModelPreflight::preflight_synapse (xml_node<>* syn_node,
                << dst_population << "'";
             throw runtime_error (ee.str());
         }
-        replace_fixedprob_connection (fixedprob_connection, src_num, dst_num);
+        this->replace_fixedprob_connection (fixedprob_connection, src_num, dst_num, fixedDelay);
     } else if (connection_list) {
         // Check if it's already binary, if not, expand.
-        connection_list_to_binary (connection_list);
+        this->connection_list_to_binary (connection_list, fixedDelay);
     }
 
     int dstNum_ = this->find_num_neurons (dst_population);
@@ -538,11 +608,13 @@ ModelPreflight::get_component_name (xml_node<>* component_node)
 }
 
 void
-ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node)
+ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
+                                           float fixedValDelayChange)
 {
     xml_node<>* binaryfile = connlist_node->first_node("BinaryFile");
-    if (binaryfile) {
-        // No further work to do; this ConnectionList is already a binary list.
+    if (binaryfile && fixedValDelayChange < 0.0) {
+        // No further work to do; this ConnectionList is already a
+        // binary list and there's no override.
         return;
     }
 
@@ -551,7 +623,8 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node)
 
     // First see if we have a Delay element, and what
     // that delay is, so that we can assign delays to the Connections.
-    bool have_delay_element = this->setup_connection_delays (connlist_node, cl);
+    bool have_delay_element = this->setup_connection_delays (connlist_node, cl,
+                                                             fixedValDelayChange);
 
     // Read XML to get each connection and insert this into
     // the ConnectionList object.
@@ -604,7 +677,7 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node)
 
     // If the ConnectionList contained a Delay element, we have to
     // generate the delays before writing the connection out.
-    if (have_delay_element) {
+    if (have_delay_element || fixedValDelayChange >= 0) {
         cl.generateDelays();
     }
 
@@ -614,7 +687,8 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node)
 
 void
 ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
-                                              const string& src_num, const string& dst_num)
+                                              const string& src_num, const string& dst_num,
+                                              float fixedValDelayChange)
 {
     // Get the FixedProbability probability and seed from this bit of the model.xml:
     // <FixedProbabilityConnection probability="0.11" seed="123">
@@ -649,7 +723,7 @@ ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
     }
 
     spineml::ConnectionList cl;
-    this->setup_connection_delays (fixedprob_node, cl);
+    this->setup_connection_delays (fixedprob_node, cl, fixedValDelayChange);
 
     unsigned int srcNum = 0;
     {
@@ -671,36 +745,48 @@ ModelPreflight::replace_fixedprob_connection (xml_node<>* fixedprob_node,
 }
 
 bool
-ModelPreflight::setup_connection_delays (xml_node<>* parent_node, ConnectionList& cl)
+ModelPreflight::setup_connection_delays (xml_node<>* parent_node,
+                                         ConnectionList& cl,
+                                         float fixedValDelayChange)
 {
     bool have_delay_element = false;
     // The connection list object which we'll populate.
     float dimMultiplier = 1.0;
     xml_node<>* delay_node = parent_node->first_node ("Delay");
-    if (delay_node) {
-        have_delay_element = true;
-        xml_attribute<>* dim_attr = delay_node->first_attribute ("Dimension");
-        if (dim_attr) {
-            cl.delayDimension = dim_attr->value();
-            if (cl.delayDimension == "ms") {
-                // This is the dimension we need - all delays in
-                // the ConnectionList need to be stored in
-                // ms. Leave dimMultiplier at its original value
-                // of 1.
-            } else if (cl.delayDimension == "s") {
-                dimMultiplier = 1000.0; // to convert to ms
-            } else {
-                stringstream ee;
-                ee << "Unknown delay dimension '" << cl.delayDimension << "'";
-                throw runtime_error (ee.str());
+    if (delay_node || fixedValDelayChange >= 0.0) {
+        xml_node<>* delay_value_node = (xml_node<>*)0;
+        xml_node<>* delay_normal_node = (xml_node<>*)0;
+        xml_node<>* delay_uniform_node = (xml_node<>*)0;
+        if (delay_node) {
+            have_delay_element = true;
+            xml_attribute<>* dim_attr = delay_node->first_attribute ("Dimension");
+            if (dim_attr) {
+                cl.delayDimension = dim_attr->value();
+                if (cl.delayDimension == "ms") {
+                    // This is the dimension we need - all delays in
+                    // the ConnectionList need to be stored in
+                    // ms. Leave dimMultiplier at its original value
+                    // of 1.
+                } else if (cl.delayDimension == "s") {
+                    dimMultiplier = 1000.0; // to convert to ms
+                } else {
+                    stringstream ee;
+                    ee << "Unknown delay dimension '" << cl.delayDimension << "'";
+                    throw runtime_error (ee.str());
+                }
             }
+            // Delays can be fixed value, uniform, normal or "none". If "none" then the
+            // Delay element just looks like this: <Delay dimension="ms"/>
+            delay_value_node = delay_node->first_node ("FixedValue");
+            delay_normal_node = delay_node->first_node ("NormalDistribution");
+            delay_uniform_node = delay_node->first_node ("UniformDistribution");
         }
-        // Delays can be fixed value, uniform, normal or "none". If "none" then the
-        // Delay element just looks like this: <Delay dimension="ms"/>
-        xml_node<>* delay_value_node = delay_node->first_node ("FixedValue");
-        xml_node<>* delay_normal_node = delay_node->first_node ("NormalDistribution");
-        xml_node<>* delay_uniform_node = delay_node->first_node ("UniformDistribution");
-        if (delay_value_node) {
+
+        if (fixedValDelayChange >= 0.0) {
+            cl.delayDistributionType = spineml::Dist_FixedValue;
+            cl.delayFixedValue = fixedValDelayChange; // always in ms.
+
+        } else if (delay_value_node) {
             cl.delayDistributionType = spineml::Dist_FixedValue;
             xml_attribute<>* value_attr = delay_value_node->first_attribute ("value");
             if (value_attr) {
@@ -990,13 +1076,13 @@ ModelPreflight::binaryDataFloatToDouble (bool forwards)
     this->init();
     this->binaryDataF2D = forwards;
     if (this->binaryDataF2D) {
-        cout << "Float to double conversion requested" << endl;
+        cout << "PreFlight: Float to double conversion requested" << endl;
     } else {
-        cout << "Double to float conversion requested" << endl;
+        cout << "PreFlight: Double to float conversion requested" << endl;
     }
     // On run 1, this checks that all binary files have correct size.
     this->findExplicitData (static_cast<xml_node<>*>(0), 1);
-    cout << "binaryDataFiles can be converted; proceeding!\n";
+    cout << "PreFlight: binaryDataFiles can be converted; proceeding!\n";
     // On run 2, the binary files are modified.
     this->findExplicitData (static_cast<xml_node<>*>(0), 2);
 }
@@ -1076,7 +1162,7 @@ ModelPreflight::binaryDataVerify (xml_node<>* binaryfile_node)
         ss >> num_elements;
     }
 
-    cout << "Verify file " << bf_fname << " which has  " << num_elements << " elements\n";
+    cout << "PreFlight: Verify file " << bf_fname << " which has  " << num_elements << " elements\n";
 
     string fname = this->modeldir + bf_fname;
     ifstream f;
@@ -1090,9 +1176,9 @@ ModelPreflight::binaryDataVerify (xml_node<>* binaryfile_node)
     unsigned int nbytes = f.tellg();
     f.close();
 
-    cout << "num_elements=" << num_elements
-         << " nbytes=" << nbytes << " nbytes/8=" << nbytes/8
-         << " nbytes/12=" << nbytes/12 << endl;
+    //cout << "num_elements=" << num_elements
+    //     << " nbytes=" << nbytes << " nbytes/8=" << nbytes/8
+    //     << " nbytes/12=" << nbytes/12 << endl;
     if (nbytes/8 == num_elements) {
         // We're in int,float format.
         if (this->binaryDataF2D == true) {
@@ -1130,7 +1216,7 @@ ModelPreflight::binaryDataModify (xml_node<>* binaryfile_node)
         ss >> num_elements;
     }
 
-    cout << "Modify file " << bf_fname << " which has  " << num_elements << " elements\n";
+    cout << "PreFlight: Modify file " << bf_fname << " which has  " << num_elements << " elements\n";
 
     // When this code runs, the verify function should already have run.
     string fname = this->modeldir + bf_fname;
@@ -1161,7 +1247,7 @@ ModelPreflight::binaryDataModify (xml_node<>* binaryfile_node)
                 o.write (reinterpret_cast<char*>(&index), sizeof index);
                 f.read (reinterpret_cast<char*>(&value), sizeof value);
                 if (f.eof()) {
-                    cout << "Finished reading in unexpected location\n";
+                    cout << "PreFlight: Finished reading in unexpected location\n";
                     break;
                 }
                 dvalue = static_cast<double>(value);
@@ -1182,7 +1268,7 @@ ModelPreflight::binaryDataModify (xml_node<>* binaryfile_node)
                 o.write (reinterpret_cast<char*>(&index), sizeof index);
                 f.read (reinterpret_cast<char*>(&dvalue), sizeof dvalue);
                 if (f.eof()) {
-                    cout << "Finished reading in unexpected location\n";
+                    cout << "PreFlight: Finished reading in unexpected location\n";
                     break;
                 }
                 value = static_cast<float>(dvalue);

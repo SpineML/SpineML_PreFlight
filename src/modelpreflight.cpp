@@ -360,15 +360,17 @@ ModelPreflight::preflight_projection (xml_node<>* proj_node,
     xml_attribute<>* dst_pop_attr;
     if ((dst_pop_attr = proj_node->first_attribute ("dst_population"))) {
         dst_population = dst_pop_attr->value();
-    } // else failed to get src name
+    } // else failed to get attribute
 
     cout << "PreFlight: processing projection " << src_name << " to " << dst_population << endl;
 
     // And then for each synapse in the projection:
+    int src_syn_num = 0;
     for (xml_node<>* syn_node = proj_node->first_node(LVL"Synapse");
          syn_node;
          syn_node = syn_node->next_sibling(LVL"Synapse")) {
-        this->preflight_synapse (syn_node, src_name, src_num, dst_population);
+        this->preflight_synapse (syn_node, src_name, src_syn_num, src_num, dst_population);
+        ++src_syn_num;
     }
 }
 
@@ -457,12 +459,19 @@ ModelPreflight::searchDelayChanges (const string& src, const string& srcPort,
 void
 ModelPreflight::preflight_synapse (xml_node<>* syn_node,
                                    const string& src_name,
+                                   int src_syn_num,
                                    const string& src_num,
                                    const string& dst_population)
 {
+    string synapse_num("");
+    {
+        stringstream synss;
+        synss << src_syn_num;
+        synss >> synapse_num;
+    }
     // Does this synapse match any of the DelayChanges? If it does,
     // then 0 <= delay <= inf is returned. Otherwise, -1 is returned.
-    float fixedDelay = this->searchDelayChanges (src_name, src_num, dst_population);
+    float fixedDelay = this->searchDelayChanges (src_name, dst_population, synapse_num);
 
     // For each synapse... Is there a FixedProbability?
     xml_node<>* fixedprob_connection = syn_node->first_node("FixedProbabilityConnection");

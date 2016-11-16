@@ -200,7 +200,11 @@ Experiment::addDelayChangeRequest (const string& dcrequest)
         }
         xml_node<>* delay_node = model.findNamedElement(synapse_node, delayname);
         if (!delay_node) {
-            throw runtime_error ("This LL:WeightUpdate does not have a Delay sibling");
+            string cl("ConnectionList");
+            xml_node<>* connlist_node = model.findNamedElement (synapse_node, cl);
+            if (!connlist_node) {
+                throw runtime_error ("This LL:WeightUpdate does not contain a Delay element or ConnectionList");
+            }
         }
 
         // Can now insert a node into our experiment.
@@ -236,7 +240,7 @@ Experiment::addDelayChangeRequest (const string& dcrequest)
             string cl("ConnectionList");
             xml_node<>* connlist_node = model.findNamedElement (input_node, cl);
             if (!connlist_node) {
-                throw runtime_error ("This LL:Input does not contain a Delay element");
+                throw runtime_error ("This LL:Input does not contain a Delay element or ConnectionList");
             } // else no delay, but delays presumably inside connlist
               // node (could check for at least one Connection node
               // therein, containing a delay attribute).

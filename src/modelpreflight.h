@@ -328,12 +328,16 @@ namespace spineml
          *
          * @param src_name The source population.
          *
+         * @param src_syn_num The synapse number of the synapse.
+         *
          * @param src_num The number of members in the source population.
          *
          * @param dst_population The destination population for the synapse.
          */
         void preflight_synapse (rapidxml::xml_node<>* syn_node,
-                                const std::string& src_name, const std::string& src_num,
+                                const std::string& src_name,
+                                int src_syn_num,
+                                const std::string& src_num,
                                 const std::string& dst_population);
 
         /*!

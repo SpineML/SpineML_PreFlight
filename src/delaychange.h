@@ -22,7 +22,11 @@ namespace spineml
     };
 
     /*!
-     * A class to represent a delay change
+     * A class to represent a delay change. This single class covers
+     * both the SpineML delay change types "ProjectionDelayChange" and
+     * "GenericInputDelayChange". The DelayChangeType is used to
+     * distinguish which one is which.
+
      */
     class DelayChange
     {

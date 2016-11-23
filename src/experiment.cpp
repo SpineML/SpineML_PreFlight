@@ -412,25 +412,31 @@ Experiment::insertModelProjectionDelay (xml_node<>* delay_node, const vector<str
     string wuname = this->buildProjectionWUName (elements[0], elements[1], elements[2]);
 
     xml_node<>* into_node = static_cast<xml_node<>*>(0);
-    // Go through each Configuration.
-    for (xml_node<>* model_delay_node = model_node->first_node ("Delay");
-         model_delay_node;
-         model_delay_node = model_delay_node->next_sibling ("Delay")) {
-        xml_attribute<>* wuattr = model_delay_node->first_attribute ("weight_update");
-        if (wuattr) {
-            string wu(wuattr->value());
-            if (wu == wuname) {
-                // This Delay's weight_update attribute matches the parameters given on the cmd line
-                into_node = model_delay_node;
+    // Go through each ProjectionDelayChange
+    for (xml_node<>* model_delaychange_node = model_node->first_node ("ProjectionDelayChange");
+         model_delaychange_node;
+         model_delaychange_node = model_delaychange_node->next_sibling ("ProjectionDelayChange")) {
+
+        xml_attribute<>* sattr = model_delaychange_node->first_attribute ("src");
+        xml_attribute<>* dattr = model_delaychange_node->first_attribute ("dst");
+        xml_attribute<>* synattr = model_delaychange_node->first_attribute ("synapse");
+
+        if (sattr && dattr && synattr) {
+            string s(sattr->value());
+            string d(dattr->value());
+            string syn(synattr->value());
+            if (s == elements[0] && d == elements[1] && syn == elements[2]) {
+                // This Delay's attributes match the parameters given on the cmd line
+                into_node = model_delaychange_node;
                 break;
             }
         }
     }
 
     bool created_node (false);
-    if (!into_node) { // into_node will be a "Delay"
+    if (!into_node) { // into_node will be a "ProjectionDelayChange"
         // Create into_node as it doesn't already exist.
-        into_node = doc.allocate_node (node_element, "Delay");
+        into_node = doc.allocate_node (node_element, "ProjectionDelayChange");
         created_node = true;
     } // else existing matching configuration found
 
@@ -438,13 +444,23 @@ Experiment::insertModelProjectionDelay (xml_node<>* delay_node, const vector<str
     into_node->remove_all_attributes();
     into_node->remove_all_nodes();
     // 2. Add new weight_update attribute
-    char* wustr_alloced = doc.allocate_string (wuname.c_str());
-    xml_attribute<>* wu_attr = doc.allocate_attribute ("weight_update", wustr_alloced);
-    into_node->append_attribute (wu_attr);
+    char* sstr_alloced = doc.allocate_string (elements[0].c_str());
+    xml_attribute<>* s_attr = doc.allocate_attribute ("src", sstr_alloced);
+    into_node->append_attribute (s_attr);
+    char* dstr_alloced = doc.allocate_string (elements[1].c_str());
+    xml_attribute<>* d_attr = doc.allocate_attribute ("dst", dstr_alloced);
+    into_node->append_attribute (d_attr);
+    char* synstr_alloced = doc.allocate_string (elements[2].c_str());
+    xml_attribute<>* syn_attr = doc.allocate_attribute ("synapse", synstr_alloced);
+    into_node->append_attribute (syn_attr);
+
+    // 2.2 Add Delay node
+    xml_node<>* delay_node = doc.allocate_node (node_element, "UL:Delay");
+
     // 3. Add dimension attribute
     char* dimstr_alloced = doc.allocate_string ("ms");
     xml_attribute<>* dim_attr = doc.allocate_attribute ("dimension", dimstr_alloced);
-    into_node->append_attribute (dim_attr);
+    delay_node->append_attribute (dim_attr);
 
     // 4. Allocate new fixed value node
     xml_node<>* fv_node = doc.allocate_node (node_element, "UL:FixedValue");
@@ -452,7 +468,12 @@ Experiment::insertModelProjectionDelay (xml_node<>* delay_node, const vector<str
     char* val_alloced = doc.allocate_string (elements[3].c_str());
     xml_attribute<>* value_attr = doc.allocate_attribute ("value", val_alloced);
     fv_node->append_attribute (value_attr);
-    into_node->prepend_node (fv_node);
+
+    // Add FixedValue into Delay
+    delay_node->prepend_node (fv_node);
+
+    // Add Delay into the ProjectionDelayChange node
+    into_node->prepend_node (delay_node);
 
     // Now add the new Delay node to the document's Model node, if it
     // has been newly created.
@@ -475,15 +496,15 @@ Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string
     // Need to find delay_node in model_node which matches elements 0,1,2 and 3.
 
     xml_node<>* into_node = static_cast<xml_node<>*>(0);
-    // Go through each Configuration.
-    for (xml_node<>* model_delay_node = model_node->first_node ("Delay");
-         model_delay_node;
-         model_delay_node = model_delay_node->next_sibling ("Delay")) {
+    // Go through each GenericInputDelayChange.
+    for (xml_node<>* model_delaychange_node = model_node->first_node ("GenericInputDelayChange");
+         model_delaychange_node;
+         model_delaychange_node = model_delaychange_node->next_sibling ("GenericInputDelayChange")) {
 
-        xml_attribute<>* sattr = model_delay_node->first_attribute ("src_population");
-        xml_attribute<>* spattr = model_delay_node->first_attribute ("src_port");
-        xml_attribute<>* dattr = model_delay_node->first_attribute ("dst_population");
-        xml_attribute<>* dpattr = model_delay_node->first_attribute ("dst_port");
+        xml_attribute<>* sattr = model_delaychange_node->first_attribute ("src");
+        xml_attribute<>* spattr = model_delaychange_node->first_attribute ("src_port");
+        xml_attribute<>* dattr = model_delaychange_node->first_attribute ("dst");
+        xml_attribute<>* dpattr = model_delaychange_node->first_attribute ("dst_port");
 
         if (sattr && spattr && dattr && dpattr) {
             string s(sattr->value());
@@ -492,7 +513,7 @@ Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string
             string dp(dpattr->value());
             if (s == elements[0] && sp == elements[1] && d == elements[2] && dp == elements[3]) {
                 // This Delay's attributes match the parameters given on the cmd line
-                into_node = model_delay_node;
+                into_node = model_delaychange_node;
                 break;
             }
         }
@@ -500,9 +521,9 @@ Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string
     }
 
     bool created_node (false);
-    if (!into_node) { // into_node will be a "Delay"
+    if (!into_node) { // into_node will be a "GenericInputDelayChange"
         // Create into_node as it doesn't already exist.
-        into_node = doc.allocate_node (node_element, "Delay");
+        into_node = doc.allocate_node (node_element, "GenericInputDelayChange");
         created_node = true;
     } // else existing matching configuration found
 
@@ -511,22 +532,25 @@ Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string
     into_node->remove_all_nodes();
     // 2. Add new src,srcPort,dst and dstPort attributes
     char* sstr_alloced = doc.allocate_string (elements[0].c_str());
-    xml_attribute<>* s_attr = doc.allocate_attribute ("src_population", sstr_alloced);
+    xml_attribute<>* s_attr = doc.allocate_attribute ("src", sstr_alloced);
     into_node->append_attribute (s_attr);
     char* spstr_alloced = doc.allocate_string (elements[1].c_str());
-    xml_attribute<>* sp_attr = doc.allocate_attribute ("srcPort", spstr_alloced);
+    xml_attribute<>* sp_attr = doc.allocate_attribute ("src_port", spstr_alloced);
     into_node->append_attribute (sp_attr);
     char* dstr_alloced = doc.allocate_string (elements[2].c_str());
-    xml_attribute<>* d_attr = doc.allocate_attribute ("dst_population", dstr_alloced);
+    xml_attribute<>* d_attr = doc.allocate_attribute ("dst", dstr_alloced);
     into_node->append_attribute (d_attr);
     char* dpstr_alloced = doc.allocate_string (elements[3].c_str());
-    xml_attribute<>* dp_attr = doc.allocate_attribute ("dstPort", dpstr_alloced);
+    xml_attribute<>* dp_attr = doc.allocate_attribute ("dst_port", dpstr_alloced);
     into_node->append_attribute (dp_attr);
+
+    // 2.2 Add Delay node
+    xml_node<>* delay_node = doc.allocate_node (node_element, "UL:Delay");
 
     // 3. Add dimension attribute
     char* dimstr_alloced = doc.allocate_string ("ms");
     xml_attribute<>* dim_attr = doc.allocate_attribute ("dimension", dimstr_alloced);
-    into_node->append_attribute (dim_attr);
+    delay_node->append_attribute (dim_attr);
 
     // 4. Allocate new fixed value node
     xml_node<>* fv_node = doc.allocate_node (node_element, "UL:FixedValue");
@@ -534,7 +558,9 @@ Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string
     char* val_alloced = doc.allocate_string (elements[4].c_str());
     xml_attribute<>* value_attr = doc.allocate_attribute ("value", val_alloced);
     fv_node->append_attribute (value_attr);
-    into_node->prepend_node (fv_node);
+    delay_node->prepend_node (fv_node);
+
+    into_node->prepend_node (delay_node);
 
     // Now add the new Delay node to the document's Model node, if it
     // has been newly created.

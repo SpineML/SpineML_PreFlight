@@ -396,7 +396,7 @@ Experiment::findExperimentModel (xml_document<>& doc)
 }
 
 void
-Experiment::insertModelProjectionDelay (xml_node<>* delay_node, const vector<string>& elements)
+Experiment::insertModelProjectionDelay (xml_node<>* unused_node, const vector<string>& elements)
 {
     xml_document<> doc;
     AllocAndRead ar(this->filepath);
@@ -404,12 +404,6 @@ Experiment::insertModelProjectionDelay (xml_node<>* delay_node, const vector<str
     doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
 
     xml_node<>* model_node = this->findExperimentModel (doc);
-
-    // Need to find delay_node in model_node and replace or insert
-    // a new one. What do we know about property_node?  We have
-    // container name which is elements[0], property name elements[1]
-    // and value elements[2].
-    string wuname = this->buildProjectionWUName (elements[0], elements[1], elements[2]);
 
     xml_node<>* into_node = static_cast<xml_node<>*>(0);
     // Go through each ProjectionDelayChange
@@ -485,7 +479,7 @@ Experiment::insertModelProjectionDelay (xml_node<>* delay_node, const vector<str
 }
 
 void
-Experiment::insertModelGenericDelay (xml_node<>* delay_node, const vector<string>& elements)
+Experiment::insertModelGenericDelay (xml_node<>* unused_node, const vector<string>& elements)
 {
     xml_document<> doc;
     AllocAndRead ar(this->filepath);

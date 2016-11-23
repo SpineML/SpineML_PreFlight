@@ -116,7 +116,7 @@ namespace spineml
          * property and new value which have been extracted from a
          * command line argument.
          */
-        void insertModelConfig (rapidxml::xml_node<>* property_node,
+        void insertModelConfig (rapidxml::xml_node<>* unused_node,
                                 const std::vector<std::string>& elements);
 
         /*!
@@ -127,7 +127,7 @@ namespace spineml
          * and new value which have been extracted from a command line
          * argument.
          */
-        void insertModelProjectionDelay (rapidxml::xml_node<>* delay_node,
+        void insertModelProjectionDelay (rapidxml::xml_node<>* unused_node,
                                          const std::vector<std::string>& elements);
 
         /*!

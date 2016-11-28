@@ -70,7 +70,10 @@ ConnectionList::generateDelays (void)
         break;
     case spineml::Dist_FixedValue:
     default:
-        this->connectivityC2Delay.assign (this->connectivityC2D.size(), this->delayFixedValue);
+        // Do nothing, a Delay element for this->delayFixedValue will
+        // be written out and the connection list will have
+        // explicit_delay_flag set to 0 and only two "columns" of
+        // data.
         break;
     }
 }
@@ -241,10 +244,12 @@ ConnectionList::writeBinary (xml_node<>* into_node,
             // File output
             f.write (reinterpret_cast<const char*>(&(s_idx)), sizeof(int));
             f.write (reinterpret_cast<const char*>(&(*d)), sizeof(int));
-            f.write (reinterpret_cast<const char*>(&(*dly)), sizeof(float));
             ++c;
             ++d;
-            ++dly;
+            if (this->delayDistributionType != spineml::Dist_FixedValue) {
+                f.write (reinterpret_cast<const char*>(&(*dly)), sizeof(float));
+                ++dly;
+            }
         }
 
         ++s;
@@ -277,8 +282,14 @@ ConnectionList::writeXml (xml_node<>* into_node,
     nc_ss << this->connectivityC2D.size();
     char* nc_alloced = thedoc->allocate_string(nc_ss.str().c_str());
     xml_attribute<>* num_connections_attr = thedoc->allocate_attribute ("num_connections", nc_alloced);
-    // We're always going to explicitly list the delay for each connection:
-    xml_attribute<>* explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay_flag", "1");
+
+    xml_attribute<>* explicit_delay_attr = (xml_attribute<>*)0;
+    if (this->delayDistributionType == spineml::Dist_FixedValue) {
+        explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay_flag", "0");
+    } else {
+        explicit_delay_attr = thedoc->allocate_attribute ("explicit_delay_flag", "1");
+    }
+
     // "packed_data" is used by SpineCreator when reading
     // SpineML. "packed_data" signifies that the data is not output
     // using the Qt serialisation streams. We therefore add it here in
@@ -291,4 +302,22 @@ ConnectionList::writeXml (xml_node<>* into_node,
     binfile_node->append_attribute (packed_data_attr);
 
     into_node->prepend_node (binfile_node);
+
+    if (this->delayDistributionType == spineml::Dist_FixedValue) {
+        // Add Delay alongside BinaryFile
+        xml_node<>* delay_node = thedoc->allocate_node (node_element, "Delay");
+        char* dim_alloced = thedoc->allocate_string ("ms");
+        xml_attribute<>* dim_attr = thedoc->allocate_attribute ("dimension", dim_alloced);
+        delay_node->append_attribute (dim_attr);
+
+        xml_node<>* fv_node = thedoc->allocate_node (node_element, "FixedValue");
+        stringstream valss;
+        valss << this->delayFixedValue;
+        char* fv_alloced = thedoc->allocate_string (valss.str().c_str());
+        xml_attribute<>* val_attr = thedoc->allocate_attribute ("value", fv_alloced);
+        fv_node->append_attribute (val_attr);
+
+        delay_node->prepend_node (fv_node);
+        into_node->prepend_node (delay_node);
+    }
 }

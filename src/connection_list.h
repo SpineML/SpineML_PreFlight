@@ -138,8 +138,11 @@ namespace spineml
                     const std::string& model_root, const std::string& binary_file_name);
 
         /*!
-         * Generate the explicit list of connection delays. This may
-         * be a fixed value, or a uniform or normal distribution.
+         * Generate the explicit list of connection delays for a
+         * uniform or normal distribution. If the
+         * delayDistributionType is Dist_FixedValue, then this
+         * function will do nothing, as a Delay XML node will be
+         * written out along with the connection list in that case.
          */
         void generateDelays (void);
 

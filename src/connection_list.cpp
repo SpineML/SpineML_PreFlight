@@ -206,7 +206,8 @@ ConnectionList::writeBinary (xml_node<>* into_node,
                              const string& model_root,
                              const string& binary_file_name)
 {
-    if (this->connectivityC2Delay.size() != this->connectivityC2D.size()) {
+    if (this->delayDistributionType != spineml::Dist_FixedValue
+        && this->connectivityC2Delay.size() != this->connectivityC2D.size()) {
         stringstream ee;
         ee << __FUNCTION__ << " Error: Don't have the same number of delays ("
            << this->connectivityC2Delay.size() << ") as destinations ("

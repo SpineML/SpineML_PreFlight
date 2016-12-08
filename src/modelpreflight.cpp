@@ -666,12 +666,19 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
             stringstream ss;
             ss << delay_attr->value();
             ss >> delay;
+            // Explicit delays in Connection elements mean that the
+            // delays are an explicit list.
+            if (cl.delayDistributionType != spineml::Dist_ExplicitList) {
+                cl.delayDistributionType = spineml::Dist_ExplicitList;
+            }
         } else if (have_delay_element) {
             // It's ok for a Connection not to have a delay attribute,
             // but in that case, a ConnectionList needs to contain a
             // Delay element.
+            delay = -1; // -1 means "don't add delay to connectivityC2Delay"
         } else {
-            throw runtime_error ("Failed to get delay, malformed XML.");
+            throw runtime_error ("Failed to get a delay attribute for this "
+                                 "Connection and there is no Delay element to use.");
         }
 
         // Ensure connectivityS2C is large enough for the sources.
@@ -681,7 +688,9 @@ ModelPreflight::connection_list_to_binary (xml_node<>* connlist_node,
         }
         cl.connectivityS2C[src].push_back (c_idx); // bad_alloc
         cl.connectivityC2D.push_back (dst);
-        cl.connectivityC2Delay.push_back (delay);
+        if (delay > -1) {
+            cl.connectivityC2Delay.push_back (delay);
+        }
     }
 
     // If the ConnectionList contained a Delay element, we have to

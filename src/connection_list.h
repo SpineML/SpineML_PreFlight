@@ -20,7 +20,8 @@ namespace spineml
     enum Distribution {
         Dist_FixedValue,
         Dist_Uniform,
-        Dist_Normal
+        Dist_Normal,
+        Dist_ExplicitList
     };
 
     /*!

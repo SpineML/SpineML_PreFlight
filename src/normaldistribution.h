@@ -33,13 +33,32 @@ namespace spineml
          */
         NormalDistribution(rapidxml::xml_node<>* nd_node, const unsigned int num_in_pop);
 
+        /*!
+         * Construct an empty NormalDistribution
+         */
+        NormalDistribution();
+
     protected:
         /*!
          * Write out the fixed values as an explicit binary file.
          */
         void writeVLBinaryData (std::ostream& f);
 
+        /*!
+         * Populates the Property node @param into_node with a
+         * NormalDistribution XML node. Uses @param the_doc to
+         * allocate member for the new node and its attributes.
+         */
+        void writeULPropertyValue (rapidxml::xml_document<>* the_doc,
+                                   rapidxml::xml_node<>* into_node);
+
     public:
+        /*!
+         * Set mean, variance and seed from a string like
+         * NORM(1,0.3,123)
+         */
+        void setFromString (const std::string& str);
+
         /*!
          * The mean of the Gaussian
          */

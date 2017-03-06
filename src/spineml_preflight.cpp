@@ -176,6 +176,13 @@ int main (int argc, char * argv[])
         {"property_change", 'p',
          POPT_ARG_STRING, &(cmdOptions.property_change), 0,
          "Change a property. Provide an argument like \"Population:tau:45\". "
+         "Properties of projections can also be changed, e.g. \"STN_spk to GPeTI Synapse 0 weight_update:S:10\". "
+         "To specify a random uniform distribution use a syntax like \"Population:tau:UNI(40,45,123)\" "
+         "where UNI(40,45,123) stands for a uniform distribution with min 40, maximum 45, generated from the RNG "
+         "with seed 123. For a random normal distribution use "
+         "\"STN_spk to GPeTI Synapse 0 weight_update:S:NORM(10,3,123)\" where NORM(10,3,123) stands for a normal "
+         "distribution with mean 10, variance 3 generated from the RNG with seed 123. To specify dimensions in "
+         "any of these cases append the dimension string after the property value or distribution string."
          "This option can be used multiple times."},
 
         {"delay_change", 'd',

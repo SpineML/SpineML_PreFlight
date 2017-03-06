@@ -3,6 +3,7 @@
  */
 
 #include <string>
+#include <vector>
 #include <utility>
 #include <stdexcept>
 #include <sstream>
@@ -68,6 +69,37 @@ Util::stripChars (std::string& input, const char charList)
     return rtn;
 }
 
+vector<string>
+Util::stringToVector (const string& s, const string& separator,
+                      const bool ignoreTrailingEmptyVal)
+{
+        if (separator.empty()) {
+                throw runtime_error ("Can't split the string; the separator is empty.");
+        }
+        vector<string> theVec;
+        string entry("");
+        string::size_type sepLen = separator.size();
+        string::size_type a=0, b=0;
+        while (a < s.size()
+               && (b = s.find (separator, a)) != string::npos) {
+                entry = s.substr (a, b-a);
+                theVec.push_back (entry);
+                a=b+sepLen;
+        }
+        // Last one has no separator
+        if (a < s.size()) {
+                b = s.size();
+                entry = s.substr (a, b-a);
+                theVec.push_back (entry);
+        } else {
+                if (!ignoreTrailingEmptyVal) {
+                        theVec.push_back ("");
+                }
+        }
+
+        return theVec;
+}
+
 void
 Util::conditionAsXmlTag (std::string& str)
 {
@@ -100,6 +132,61 @@ Util::conditionAsXmlTag (std::string& str)
         newStr += str;
         str = newStr;
     }
+}
+
+pair<string, string>
+Util::getDistWithDimension (const std::string& str)
+{
+    // Two copies of str to work on.
+    string diststring = str;
+    string dimstring = str;
+
+    // Remove numbers/whitespace from dimstring
+    {
+        string charList("0123456789-+. \t\n\r");
+        string::size_type pos(0);
+        while ((pos = dimstring.find_last_of (charList)) != string::npos) {
+            dimstring.erase (pos, 1);
+        }
+    }
+    // dimstring is anything after the ")" of str
+    {
+        string::size_type pos(0);
+        pos = dimstring.find_last_of(")");
+        if (pos == string::npos) {
+            // Malformed str
+            dimstring = "";
+        } else {
+            try {
+                dimstring = dimstring.substr(++pos);
+            } catch (std::out_of_range& e) {
+                dimstring = "";
+            }
+        }
+    }
+
+    // Diststring is everything up to the ")"
+    {
+        string::size_type pos(0);
+        pos = diststring.find_last_of(")");
+        if (pos == string::npos) {
+            // Malformed str
+            diststring = "";
+        } else {
+            diststring = diststring.substr(0, ++pos);
+        }
+    }
+
+    // A return object. I'm copying diststring and dimstring in here,
+    // to make the code readable (I could have just used rtn.first and
+    // rtn.second = str at the start and worked with those).
+    pair<string, string> rtn;
+    // Add value to rtn.
+    rtn.first = diststring;
+    // Add dimension to rtn.
+    rtn.second = dimstring;
+
+    return rtn;
 }
 
 pair<double, string>

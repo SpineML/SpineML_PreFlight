@@ -33,13 +33,32 @@ namespace spineml
          */
         UniformDistribution(rapidxml::xml_node<>* ud_node, const unsigned int num_in_pop);
 
+        /*!
+         * Construct an empty UniformDistribution
+         */
+        UniformDistribution();
+
     protected:
         /*!
          * Write out the fixed values as an explicit binary file.
          */
         void writeVLBinaryData (std::ostream& f);
 
+        /*!
+         * Populates the Property node @param into_node with a
+         * UniformDistribution XML node. Uses @param the_doc to
+         * allocate member for the new node and its attributes.
+         */
+        void writeULPropertyValue (rapidxml::xml_document<>* the_doc,
+                                   rapidxml::xml_node<>* into_node);
+
     public:
+        /*!
+         * Set minimum, maximum and seed from a string like
+         * UNI(1,2,123)
+         */
+        void setFromString (const std::string& str);
+
         /*!
          * The minimum value for an output random number.
          */

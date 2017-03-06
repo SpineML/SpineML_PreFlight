@@ -16,6 +16,8 @@
 #include "experiment.h"
 #include "modelpreflight.h"
 #include "fixedvalue.h"
+#include "uniformdistribution.h"
+#include "normaldistribution.h"
 #include "timepointvalue.h"
 #include "util.h"
 
@@ -263,7 +265,7 @@ void
 Experiment::addPropertyChangeRequest (const string& pcrequest)
 {
     // Looks like: "Population:varname:value" where value could be
-    // fixed (default) or a distribution.
+    // fixed (default) or a distribution: NORM(mean,variance,seed) or UNI(min,max,seed)
     vector<string> elements = Util::splitStringWithEncs (pcrequest);
 
     // Now sanity check the elements.
@@ -621,21 +623,37 @@ Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& 
     into_node->append_attribute (target_attr);
 
     // 3. Add UL:Property node
-
-    // if (FixedValue)....
-    FixedValue fv;
-    fv.setPropertyName (elements[1]);
-
-    // Get dimension from elements[2]
-    pair<double, string> val_with_dim = Util::getValueWithDimension (elements[2]);
-    fv.setPropertyDim (val_with_dim.second);
-    fv.setValue (val_with_dim.first);
     xml_node<>* prop_node = doc.allocate_node (node_element, "UL:Property");
-    // As we've not added prop_node to the document we have to pass the document pointer here:
-    fv.writeULProperty (&doc, prop_node);
-    into_node->prepend_node (prop_node);
+    if (elements[2].find("UNI") != string::npos) {
+        UniformDistribution ud;
+        // This takes off any "ms" or somesuch dimension from the end of "UNI(1,2,123)ms"
+        pair<string, string> dist_with_dim = Util::getDistWithDimension (elements[2]);
+        ud.setPropertyDim (dist_with_dim.second);
+        ud.setPropertyName (elements[1]);
+        ud.setFromString (dist_with_dim.first);
+        // As we've not added prop_node to the document we have to pass the document pointer here:
+        ud.writeULProperty (&doc, prop_node);
 
-    // else if NORM, UNI etc
+    } else if (elements[2].find("NORM") != string::npos) {
+        NormalDistribution nd;
+        // This takes off any "ms" or somesuch dimension from the end of "NORM(1,2,123)ms"
+        pair<string, string> dist_with_dim = Util::getDistWithDimension (elements[2]);
+        nd.setPropertyDim (dist_with_dim.second);
+        nd.setPropertyName (elements[1]);
+        nd.setFromString (dist_with_dim.first);
+        nd.writeULProperty (&doc, prop_node);
+
+    } else {
+        FixedValue fv;
+        fv.setPropertyName (elements[1]);
+
+        // Get dimension from elements[2]
+        pair<double, string> val_with_dim = Util::getValueWithDimension (elements[2]);
+        fv.setPropertyDim (val_with_dim.second);
+        fv.setValue (val_with_dim.first);
+        fv.writeULProperty (&doc, prop_node);
+    }
+    into_node->prepend_node (prop_node);
 
     // Now add the new Configuration node to the document's Model
     // node, if the Configuration node has been newly created.

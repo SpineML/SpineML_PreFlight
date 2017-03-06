@@ -93,6 +93,18 @@ namespace spineml
         static int stripChars (std::string& input, const char charList);
         //@}
 
+
+        /*!
+         * Split a string of values into a vector using the separator
+         * string (not char) passed in as "separator". If
+         * ignoreTrailingEmptyVal is true, then a trailing separator
+         * with nothing after it will NOT cause an additional empty
+         * value in the returned vector.
+         */
+        static std::vector<std::string> stringToVector (const std::string& s,
+                                                        const std::string& separator,
+                                                        const bool ignoreTrailingEmptyVal = false);
+
         /*!
          * Take the string str and condition it, so that it makes a
          * valid XML tag, by replacing disallowed characters with '_'
@@ -130,6 +142,14 @@ namespace spineml
          * @return a pair containing double value and dimension string.
          */
         static std::pair<double, std::string> getValueWithDimension (const std::string& str);
+
+        /*!
+         * Given a @param str like "UNI(1,2,123)ms", place UNI(1,2,123) in pair->first
+         * and "ms" in pair->second and return the pair.
+         *
+         * @return a pair containing distribution string and dimension string.
+         */
+        static std::pair<std::string, std::string> getDistWithDimension (const std::string& str);
 
     }; // utility class
 } // namespace

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <stdexcept>
 
 /*!
  * Useful character sets

@@ -421,7 +421,7 @@ ModelPreflight::preflight_input (xml_node<>* input_node,
         this->replace_fixedprob_connection (fixedprob_connection, src_num, dest_num, fixedDelay);
     } else if (connection_list) {
         // Check if it's already binary, if not, expand.
-        this->connection_list_to_binary (connection_list, fixedDelay);
+        //this->connection_list_to_binary (connection_list, fixedDelay);
     }
 }
 

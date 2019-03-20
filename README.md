@@ -32,7 +32,7 @@ This code depends on _popt_ (the package may be named _libpopt-dev_ on
 your OS) for command line option parsing and on _doxygen_ to build the
 code documentation. The build system is _cmake_.
 
-##Quick-start guide to compilation
+## Quick-start guide to compilation
 
 Here's the install procedure for Debian, Ubuntu and similar:
 

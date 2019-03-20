@@ -244,7 +244,7 @@ ConnectionList::writeBinary (xml_node<>* into_node,
         while (c != s->end()) {
             // File output
             f.write (reinterpret_cast<const char*>(&(s_idx)), sizeof(int));
-            f.write (reinterpret_cast<const char*>(&(*d)), sizeof(int));
+            f.write (reinterpret_cast<const char*>(&(this->connectivityC2D[*c])), sizeof(int));
             ++c;
             ++d;
             if (this->delayDistributionType != spineml::Dist_FixedValue) {

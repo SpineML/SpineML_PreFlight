@@ -75,6 +75,9 @@ struct CmdOptions {
     //! To hold a list of all connection delay changes requested by the user
     char * delay_change;
     vector<string> delay_changes;
+    //! To hold a list of all connection fixed probability changes requested by the user
+    char * fp_change;
+    vector<string> fp_changes;
 
     // FIXME: Add array_tvarying_currents and array_constant_currents
 };
@@ -94,6 +97,8 @@ void zeroCmdOptions (CmdOptions* copts)
     copts->tvarying_currents.clear();
     copts->delay_change = NULL;
     copts->delay_changes.clear();
+    copts->fp_change = NULL;
+    copts->fp_changes.clear();
 }
 
 /*
@@ -132,6 +137,8 @@ void property_change_callback (poptContext con,
             cmdOptions.property_changes.push_back (cmdOptions.property_change);
         } else if (opt->shortName == 'd') {
             cmdOptions.delay_changes.push_back (cmdOptions.delay_change);
+        } else if (opt->shortName == 'f') {
+            cmdOptions.fp_changes.push_back (cmdOptions.fp_change);
         } else if (opt->shortName == 't') {
             cmdOptions.tvarying_currents.push_back (cmdOptions.tvarying_current);
         }
@@ -187,12 +194,22 @@ int main (int argc, char * argv[])
 
         {"delay_change", 'd',
          POPT_ARG_STRING, &(cmdOptions.delay_change), 0,
-         "Change a delay on a projection of generic connection. For projections, "
+         "Change a delay on a projection or generic connection. For projections, "
          "provide an argument like \"PopA:PopB:0:45\" to set a"
          "delay of 45 ms to the projection from PopA to PopB on synapse 0."
          "For generic connections the argument should be \"PopA:PortA:PopB:PortB:45\" "
          "to set a 45 ms delay to the connection from PortA on PopA to PortB on PopB. "
          "It is only possible to set fixed delays using this argument. "
+         "This option can be used multiple times."},
+
+        {"fp_change", 'f',
+         POPT_ARG_STRING, &(cmdOptions.fp_change), 0,
+         "Change the probability on a FixedProbability projection or generic connection. "
+         "For projections, "
+         "provide an argument like \"PopA:PopB:0:0.3\" to set a"
+         "probability of 0.3 to the projections from PopA to PopB on synapse 0."
+         "For generic connections the argument should be \"PopA:PortA:PopB:PortB:0.3\" "
+         "to set a 0.3 probability to the connection from PortA on PopA to PortB on PopB. "
          "This option can be used multiple times."},
 
         {"constant_current", 'c',
@@ -257,6 +274,13 @@ int main (int argc, char * argv[])
         while (pciter != cmdOptions.delay_changes.end()) {
             // Add this "delay change request" to the experiment.
             expt.addDelayChangeRequest (*pciter);
+            ++pciter;
+        }
+
+        pciter = cmdOptions.fp_changes.begin();
+        while (pciter != cmdOptions.fp_changes.end()) {
+            // Add this "fixed probability change request" to the experiment.
+            expt.addFixedProbChangeRequest (*pciter);
             ++pciter;
         }
 

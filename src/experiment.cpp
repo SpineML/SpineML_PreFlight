@@ -164,7 +164,7 @@ Experiment::addDelayChangeRequest (const string& dcrequest)
     if (elements.size() != 4 && elements.size() != 5) {
         stringstream ee;
         ee << "Wrong number of elements in delay change request.\n";
-        ee << elements.size() << " elements in constant current request (expect 4 or 5).\n";
+        ee << elements.size() << " elements in delay change request (expect 4 or 5).\n";
         throw runtime_error (ee.str());
     }
 
@@ -258,6 +258,86 @@ Experiment::addDelayChangeRequest (const string& dcrequest)
         d.dstPort = elements[3];
         d.setDelay (elements[4]);
         this->delayChanges.push_back(d);
+    }
+}
+
+void
+Experiment::addFixedProbChangeRequest (const string& fprequest)
+{
+    // Looks like: "PopA:PopB:SynNum:value" for projection or
+    // "PopA:PortA:PopB:PortB:value" for generic connection.
+    vector<string> elements = Util::splitStringWithEncs (fprequest);
+
+    // Now sanity check the elements.
+    if (elements.size() != 4 && elements.size() != 5) {
+        stringstream ee;
+        ee << "Wrong number of elements in probability change request.\n";
+        ee << elements.size() << " elements in probability change request (expect 4 or 5).\n";
+        throw runtime_error (ee.str());
+    }
+
+    // Some output to cmd line
+    if (elements.size() == 4) { // projection
+        cout << "Preflight: FixedProbability Projection probability change request: '" << elements[0]
+             << "'->'" << elements[1] << "', synapse " << elements[2] << " probability becomes " << elements[3] << "\n";
+    } else { // generic input connection
+        cout << "Preflight: Generic connection FixedProbability change request: '" << elements[0] << "' port " << elements[1]
+             << "'->'" << elements[2] << "', port " << elements[3] << " probability becomes " << elements[4] << "\n";
+    }
+
+    // We have the elements, we now need to search model.xml to make
+    // sure the connections exist.
+    spineml::ModelPreflight model (this->modelDir, this->network_layer_path);
+    model.init();
+
+    string fpname("FixedProbabilityConnection");
+    if (elements.size() == 4) { // projection
+
+        string wuname = this->buildProjectionWUName (elements[0], elements[1], elements[2]);
+        xml_node<>* weightupdate_node = model.findLLWeightUpdate (static_cast<xml_node<>*>(0), wuname);
+        if (!weightupdate_node) {
+            // No such weight update node in the model, so throw a runtime error
+            stringstream ee;
+            ee << "The model does not contain a weight update node named '" << wuname << "'";
+            throw runtime_error (ee.str());
+        }
+
+        // Now find the parent synapse node, then find the FixedProbabilityConnection node.
+        string synname("LL:Synapse");
+        xml_node<>* synapse_node = model.findNamedParent (weightupdate_node, synname);
+        if (!synapse_node) {
+            throw runtime_error ("This LL:WeightUpdate does not have an LL:Synapse parent");
+        }
+        xml_node<>* fp_node = model.findNamedElement(synapse_node, fpname);
+        if (!fp_node) {
+            throw runtime_error ("This LL:WeightUpdate does not contain a sibling FixedProbabilityConnection element");
+        }
+
+        // Can now insert a node into our experiment. Either by
+        // updating the model attribute so that when we expand the
+        // FixedProb list, we expand with the new probability or, by
+        // recording here.
+        this->insertModelUpdateFixedProb (fp_node, elements);
+
+    } else { // generic input connection
+
+        xml_node<>* input_node = model.findLLInput (static_cast<xml_node<>*>(0), "root", elements[0], elements[1], elements[2], elements[3]);
+        if (!input_node) {
+            // No such node in the model, so throw a runtime error
+            stringstream ee;
+            ee << "The model does not contain an LL:Input with src='" << elements[0]
+               << "', src_port=" << elements[1] << " and dst_port=" << elements[3] << " in a containing LL:Neuron called '" << elements[2] << "'";
+            throw runtime_error (ee.str());
+        }
+
+        // Now find the FixedProabilityConnection node which is inside the input_node.
+        xml_node<>* fp_node = model.findNamedElement (input_node, fpname);
+        if (!fp_node) {
+            throw runtime_error ("This LL:Input does not contain a FixedProbability element");
+        }
+
+        // Can now insert a node into our experiment.
+        this->insertModelUpdateFixedProb (fp_node, elements);
     }
 }
 
@@ -660,6 +740,38 @@ Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& 
     if (created_node == true) {
         model_node->prepend_node (into_node);
     }
+
+    // At end, write out the xml.
+    this->write (doc);
+}
+
+// Change an attribute and say we did so in the experiment file.
+void
+Experiment::insertModelUpdateFixedProb (xml_node<>* fp_node, const vector<string>& elements)
+{
+    xml_document<> doc;
+    AllocAndRead ar(this->filepath);
+    char* textptr = ar.data();
+    doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
+    xml_node<>* model_node = this->findExperimentModel (doc);
+
+    if (elements.size() < 4) {
+        throw runtime_error ("Experiment::insertModelUpdateFixedProb: expected elements to have 4 fields");
+    }
+
+    // Need to find fp_node in model_node and change (delete/replace)
+    // the probability attribute. What do we know about fp_node?  We
+    // have container name which is elements[0], src pop elements[1]
+    // dest pop and synapse in elements[2]; elements[3] contains the
+    // new value. The attribute to change is "probability"
+    xml_attribute<>* probattr = fp_node->first_attribute ("probability");
+    if (probattr) {
+        // We have a probability attribute, delete it
+        fp_node->remove_attribute (probattr);
+    }
+    char* newprob_alloced = doc.allocate_string (elements[3].c_str());
+    xml_attribute<>* newprob_attr = doc.allocate_attribute ("probability", newprob_alloced);
+    fp_node->append_attribute (newprob_attr);
 
     // At end, write out the xml.
     this->write (doc);

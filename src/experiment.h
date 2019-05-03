@@ -89,6 +89,19 @@ namespace spineml
         void addDelayChangeRequest (const std::string& dcrequest);
 
         /*!
+         * Add FixedProbability probability attribute change request,
+         * as provided on the command line. If the request has a bad
+         * format, throw an exception.
+         *
+         * This method splits up the single command line option passed
+         * as @param dcrequest  It then checks in the model.xml to ensure
+         * that the requested connection exists. If this turns out to be
+         * the case, it then calls @see insertModelFixedProbConfig to add the
+         * probability change/model configuration update.
+         */
+        void addFixedProbChangeRequest (const std::string& fprequest);
+
+        /*!
          * Add the raw constant current request, as provided on the
          * command line. If the request has a bad format, throw an
          * exception.
@@ -140,6 +153,14 @@ namespace spineml
          */
         void insertModelGenericDelay (rapidxml::xml_node<>* delay_node,
                                       const std::vector<std::string>& elements);
+
+        /*!
+         * In the given FixedProbabilityConnection node @fp_node,
+         * replace the attribute "probability" with the value given in
+         * @elements[3].
+         */
+        void insertModelUpdateFixedProb (rapidxml::xml_node<>* fp_node,
+                                         const std::vector<std::string>& elements);
 
         /*!
          * Update or insert new ConstantCurrent node into the experiment xml

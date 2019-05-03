@@ -182,6 +182,13 @@ namespace spineml
          */
         void write (void);
 
+        /*!
+         * Allocate a new attribute in the @doc with name @attr_name
+         * and value @attr_value.
+         */
+        rapidxml::xml_attribute<>*
+        allocate_attribute (const std::string& attr_name, const std::string& attr_value);
+
 #ifdef EXPLICIT_BINARY_DATA_CONVERSION
     public:
         /*!

@@ -317,7 +317,7 @@ Experiment::addFixedProbChangeRequest (const string& fprequest)
         // updating the model attribute so that when we expand the
         // FixedProb list, we expand with the new probability or, by
         // recording here.
-        this->insertModelUpdateFixedProb (fp_node, elements);
+        this->insertModelUpdateFixedProb (model, fp_node, elements);
 
     } else { // generic input connection
 
@@ -337,7 +337,7 @@ Experiment::addFixedProbChangeRequest (const string& fprequest)
         }
 
         // Can now insert a node into our experiment.
-        this->insertModelUpdateFixedProb (fp_node, elements);
+        this->insertModelUpdateFixedProb (model, fp_node, elements);
     }
 }
 
@@ -745,14 +745,15 @@ Experiment::insertModelConfig (xml_node<>* property_node, const vector<string>& 
     this->write (doc);
 }
 
-// Change an attribute and say we did so in the experiment file.
 void
-Experiment::insertModelUpdateFixedProb (xml_node<>* fp_node, const vector<string>& elements)
+Experiment::insertModelUpdateFixedProb (ModelPreflight& model, xml_node<>* fp_node, const vector<string>& elements)
 {
+#if 0 // Required only if we write some information to _experiment_ file
     xml_document<> doc;
     AllocAndRead ar(this->filepath);
     char* textptr = ar.data();
     doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
+#endif
 
     if (elements.size() < 4) {
         throw runtime_error ("Experiment::insertModelUpdateFixedProb: expected elements to have 4 fields");
@@ -768,12 +769,14 @@ Experiment::insertModelUpdateFixedProb (xml_node<>* fp_node, const vector<string
         // We have a probability attribute, delete it
         fp_node->remove_attribute (probattr);
     }
-    char* newprob_alloced = doc.allocate_string (elements[3].c_str());
-    xml_attribute<>* newprob_attr = doc.allocate_attribute ("probability", newprob_alloced);
+    xml_attribute<>* newprob_attr = model.allocate_attribute ("probability", elements[3]);
     fp_node->append_attribute (newprob_attr);
 
-    // At end, write out the xml.
+    model.write();
+#if 0
+    // At end, if required, write out the expt file xml.
     this->write (doc);
+#endif
 }
 
 void

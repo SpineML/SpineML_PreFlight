@@ -14,6 +14,7 @@
 #include <utility>
 #include "rapidxml.hpp"
 #include "delaychange.h"
+#include "modelpreflight.h"
 
 namespace spineml
 {
@@ -155,11 +156,12 @@ namespace spineml
                                       const std::vector<std::string>& elements);
 
         /*!
-         * In the given FixedProbabilityConnection node @fp_node,
-         * replace the attribute "probability" with the value given in
-         * @elements[3].
+         * In the model @model, and FixedProbabilityConnection node
+         * @fp_node, replace the attribute "probability" with the
+         * value given in @elements[3].
          */
-        void insertModelUpdateFixedProb (rapidxml::xml_node<>* fp_node,
+        void insertModelUpdateFixedProb (ModelPreflight& model,
+                                         rapidxml::xml_node<>* fp_node,
                                          const std::vector<std::string>& elements);
 
         /*!

@@ -36,6 +36,14 @@ ModelPreflight::ModelPreflight(const std::string& fdir, const std::string& fname
     this->modeldata.read (filepath);
 }
 
+rapidxml::xml_attribute<>*
+ModelPreflight::allocate_attribute (const std::string& attr_name, const std::string& attr_value)
+{
+    char* _alloced = this->doc.allocate_string (attr_value.c_str());
+    rapidxml::xml_attribute<>* _attr = this->doc.allocate_attribute ("probability", _alloced);
+    return _attr;
+}
+
 void
 ModelPreflight::write (void)
 {

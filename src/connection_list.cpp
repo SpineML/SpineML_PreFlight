@@ -219,8 +219,6 @@ ConnectionList::writeBinary (xml_node<>* into_node,
     vector<vector<int> >::const_iterator s_begin = this->connectivityS2C.begin();
     vector<vector<int> >::const_iterator s = s_begin;
     vector<int>::const_iterator c;
-    vector<int>::const_iterator d = this->connectivityC2D.begin();
-    vector<float>::const_iterator dly = this->connectivityC2Delay.begin();
 
     string path = model_root + binary_file_name;
     ofstream f;
@@ -237,19 +235,17 @@ ConnectionList::writeBinary (xml_node<>* into_node,
     }
 
     // Iterate over the vectors of source connection
-    while (s != this->connectivityS2C.end() && d != this->connectivityC2D.end()) {
+    while (s != this->connectivityS2C.end()) {
 
         c = s->begin();
 
         while (c != s->end()) {
             // File output
             f.write (reinterpret_cast<const char*>(&(s_idx)), sizeof(int));
-            f.write (reinterpret_cast<const char*>(&(*d)), sizeof(int));
+            f.write (reinterpret_cast<const char*>(&(this->connectivityC2D[*c])), sizeof(int));
             ++c;
-            ++d;
             if (this->delayDistributionType != spineml::Dist_FixedValue) {
-                f.write (reinterpret_cast<const char*>(&(*dly)), sizeof(float));
-                ++dly;
+                f.write (reinterpret_cast<const char*>(&(this->connectivityC2Delay[*c])), sizeof(float));
             }
         }
 

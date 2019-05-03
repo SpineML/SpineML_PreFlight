@@ -753,17 +753,16 @@ Experiment::insertModelUpdateFixedProb (xml_node<>* fp_node, const vector<string
     AllocAndRead ar(this->filepath);
     char* textptr = ar.data();
     doc.parse<parse_declaration_node | parse_no_data_nodes>(textptr);
-    xml_node<>* model_node = this->findExperimentModel (doc);
 
     if (elements.size() < 4) {
         throw runtime_error ("Experiment::insertModelUpdateFixedProb: expected elements to have 4 fields");
     }
 
-    // Need to find fp_node in model_node and change (delete/replace)
-    // the probability attribute. What do we know about fp_node?  We
-    // have container name which is elements[0], src pop elements[1]
-    // dest pop and synapse in elements[2]; elements[3] contains the
-    // new value. The attribute to change is "probability"
+    // Need to change (delete/replace) the probability attribute in
+    // fp_node. We have the elements container which is: elements[0],
+    // src pop elements[1] dest pop and synapse in elements[2];
+    // elements[3] contains the new value. The attribute to change is
+    // "probability"
     xml_attribute<>* probattr = fp_node->first_attribute ("probability");
     if (probattr) {
         // We have a probability attribute, delete it

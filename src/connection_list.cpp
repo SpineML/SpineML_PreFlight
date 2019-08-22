@@ -243,10 +243,10 @@ ConnectionList::writeBinary (xml_node<>* into_node,
             // File output
             f.write (reinterpret_cast<const char*>(&(s_idx)), sizeof(int));
             f.write (reinterpret_cast<const char*>(&(this->connectivityC2D[*c])), sizeof(int));
-            ++c;
             if (this->delayDistributionType != spineml::Dist_FixedValue) {
                 f.write (reinterpret_cast<const char*>(&(this->connectivityC2Delay[*c])), sizeof(float));
             }
+            ++c;
         }
 
         ++s;

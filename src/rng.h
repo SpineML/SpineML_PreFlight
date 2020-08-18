@@ -78,13 +78,13 @@ float uniformGCC(RngData* rd);
 // returns float:
 #define RNOR(rd) ((rd)->hz=SHR3(rd),                                    \
                   (rd)->iz=(rd)->hz&127,                                \
-                  ((unsigned int)abs((rd)->hz) < (rd)->kn[(rd)->iz]) ? (rd)->hz*(rd)->wn[(rd)->iz] : nfix(rd))
+                  ((unsigned int)std::abs((rd)->hz) < (rd)->kn[(rd)->iz]) ? (rd)->hz*(rd)->wn[(rd)->iz] : nfix(rd))
 // returns float:
 #define REXP(rd) ((rd)->jz=SHR3(rd),                                    \
                   (rd)->iz=(rd)->jz&255,                                \
                   ((rd)->jz < (rd)->ke[(rd)->iz]) ? (rd)->jz*(rd)->we[(rd)->iz] : efix(rd))
 // returns double:
-#define RPOIS(rd) -log(1.0-UNI(rd))
+#define RPOIS(rd) -std::log(1.0-UNI(rd))
 
 float nfix (RngData* rd); /*provides RNOR if #define cannot */
 
